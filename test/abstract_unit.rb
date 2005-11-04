@@ -26,7 +26,7 @@ class Test::Unit::TestCase
   
   def uploaded_file(path, content_type, filename, type=:tempfile)
     if type == :tempfile
-      t = Tempfile.new(filename)
+      t = Tempfile.new(File.basename(filename))
       FileUtils.copy_file(path, t.path)
     else
       if path
