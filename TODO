@@ -1,0 +1,7 @@
+* document configuration options better
+* support setting of permissions
+* validation methods for file format/size
+* delete stale files from tmp directories
+* move image scaling into views
+* make file_column models serializable
+
