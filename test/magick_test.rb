@@ -72,6 +72,16 @@ class RMagickSimpleTest < AbstractRMagickTest
     assert_nothing_raised { e.image = upload("invalid-image.jpg") }
     assert !e.valid?
   end
+
+  def test_serializable
+    e = Entry.new
+    e.image = upload("skanthak.png")
+    assert_nothing_raised {
+      flash = Marshal.dump(e)
+      e = Marshal.load(flash)
+    }
+    assert File.exists?(e.image)
+  end
 end
 
 class RMagickAlternativesTest < AbstractRMagickTest

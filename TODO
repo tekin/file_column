@@ -3,5 +3,6 @@
 * validation methods for file format/size
 * delete stale files from tmp directories
 * move image scaling into views
-* make file_column models serializable
+* refactor to store options in class attributes, so that we
+  can use procs again
 

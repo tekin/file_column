@@ -7,6 +7,13 @@ class Entry < ActiveRecord::Base
         errors.add("image","some stupid error") if @validation_should_fail
     end
 
+    def after_assign
+      @after_assign_called = true
+    end
+
+    def after_assign_called?
+      @after_assign_called
+    end
 end
 
 class Movie < ActiveRecord::Base
@@ -425,4 +432,20 @@ class FileColumnTest < Test::Unit::TestCase
     assert File.exists?(File.join(dir, "kerb.jpg"))
   end
 
+  def test_serializable_before_save
+    e = Entry.new
+    e.image = uploaded_file(file_path("skanthak.png"), "image/png", "skanthak.png")
+    assert_nothing_raised { 
+      flash = Marshal.dump(e) 
+      e = Marshal.load(flash)
+    }
+    assert File.exists?(e.image)
+  end
+
+  def test_after_assign
+    Entry.file_column :image, :after_assign => [:after_assign]
+    e = Entry.new
+    e.image = upload("skanthak.png")
+    assert e.after_assign_called?
+  end
 end

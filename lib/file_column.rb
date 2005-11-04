@@ -583,8 +583,8 @@ module FileColumn # :nodoc:
       define_method "#{attr}=" do |file|
         instance_variable_set state_attr, send(state_method).assign(file)
         if my_options[:after_assign]
-          my_options[:after_assign].each do |proc|
-            proc.call(self)
+          my_options[:after_assign].each do |sym|
+            self.send sym
           end
         end
       end

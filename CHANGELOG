@@ -1,3 +1,6 @@
+*svn*
+    * make object with file_columns serializable
+
 0.3
     * fixed bug where empty file uploads were not recognized with some browsers
     * fixed bug on windows when "file" utility is not present

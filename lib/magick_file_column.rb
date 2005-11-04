@@ -90,10 +90,14 @@ module FileColumn # :nodoc:
         end
       end
       state_method = "#{attr}_state".to_sym
-      options[:after_assign] ||= []
-      options[:after_assign] << Proc.new do |record|
-        record.send(state_method).transform_with_magick
+      after_assign_method = "#{attr}_magick_after_assign".to_sym
+      
+      klass.send(:define_method, after_assign_method) do
+        self.send(state_method).transform_with_magick
       end
+      
+      options[:after_assign] ||= []
+      options[:after_assign] << after_assign_method
       
       klass.validate do |record|
         state = record.send(state_method)
