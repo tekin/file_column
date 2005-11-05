@@ -81,7 +81,7 @@ module FileColumn # :nodoc:
   module Magick
 
     def self.file_column(klass, attr, options) # :nodoc:
-      require_gem 'rmagick'
+      require 'RMagick'
       if options[:magick][:versions]
         options[:magick][:versions].each_pair do |name, value|
           if value.kind_of?(String)
