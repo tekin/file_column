@@ -1,7 +1,7 @@
 task :default => [:test]
 
 PKG_NAME = "file-column"
-PKG_VERSION = "0.3"
+PKG_VERSION = "0.3.1"
 
 PKG_DIR = "release/#{PKG_NAME}-#{PKG_VERSION}"
 
@@ -16,10 +16,8 @@ end
 
 task :checkout_release => :setup_directories do
   rm_rf PKG_DIR
-  revision = ENV["REVISION"] || "t:#{PKG_NAME}-#{PKG_VERSION}"
-  sh "monotone --db ../rails_file_column.db checkout -r #{revision} #{PKG_DIR}"
-  rm_rf File.join(PKG_DIR, "MT")
-  rm_f File.join(PKG_DIR, ".mt-attrs")
+  revision = ENV["REVISION"] || "HEAD"
+  sh "svn export -r #{revision} . #{PKG_DIR}"
 end
 
 task :release_docs => :checkout_release do
