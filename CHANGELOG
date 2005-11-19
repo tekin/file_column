@@ -1,5 +1,6 @@
 *svn*
     * allow for directories in file_column dirs as well
+    * use subdirs for versions instead of fiddling with filename
 
 0.3.1
     * make object with file_columns serializable

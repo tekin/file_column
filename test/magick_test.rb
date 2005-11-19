@@ -84,23 +84,32 @@ class RMagickSimpleTest < AbstractRMagickTest
   end
 end
 
-class RMagickAlternativesTest < AbstractRMagickTest
+class RMagickVersionsTest < AbstractRMagickTest
   def setup
     Entry.file_column :image, :magick => {:geometry => "200x200",
       :versions => {
-        "thumb" => "50x50", 
-        "medium" => {:geometry => "100x100"}
+        :thumb => {:geometry => "50x50", :name => "thumb" },
+        :medium => {:geometry => "100x100"},
+        :large => {:geometry => "150x150", :lazy => true, :name => "large" }
       }
     }
   end
 
-  def test_thumb_created
-    e = Entry.new("image" => upload("kerb.jpg"))
+  def test_should_create_safe_auto_id
+    e = Entry.new
+    assert_match /^[a-zA-Z0-9]+$/, e.image_options[:magick][:versions][:medium][:name]
+  end
+
+  def test_should_create_thumb
+    e = Entry.new("image" => upload("skanthak.png"))
     
-    thumb_path = File.join(File.dirname(e.image), "kerb-thumb.jpg")
-    assert_equal thumb_path, e.image("thumb")
     assert File.exists?(e.image("thumb")), "thumb-nail not created"
     
     assert_max_image_size read_image(e.image("thumb")), 50
+  end
+
+  def test_should_not_create_lazy_versions
+    e = Entry.new("image" => upload("skanthak.png"))
+    assert !File.exists?(e.image("large")), "lazy versions should not be created unless needed"
   end
 end

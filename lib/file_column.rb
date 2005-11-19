@@ -122,12 +122,12 @@ module FileColumn # :nodoc:
       temp
     end
 
-    def absolute_path(suffix=nil)
+    def absolute_path(subdir=nil)
       nil
     end
 
 
-    def relative_path(suffix=nil)
+    def relative_path(subdir=nil)
       nil
     end
 
@@ -140,24 +140,15 @@ module FileColumn # :nodoc:
   end
 
   class RealUploadedFile < BaseUploadedFile # :nodoc:
-    def absolute_path(suffix=nil)
-      File.expand_path(File.join(@dir, filename_with_suffix(suffix)))
+    def absolute_path(subdir=nil)
+      File.expand_path(File.join(@dir, subdir, @filename))
     end
 
-    def relative_path(suffix=nil)
-      File.join(relative_path_prefix, filename_with_suffix(suffix))
+    def relative_path(subdir=nil)
+      File.join(relative_path_prefix, subdir, @filename)
     end
 
     private
-
-    def filename_with_suffix(suffix)
-      if suffix.nil?
-        @filename
-      else
-        base, ext = split_extension(@filename, :fallback_to_simple)
-        "#{base}-#{suffix}.#{ext}"
-      end
-    end
 
     # regular expressions to try for identifying extensions
     EXT_REGEXPS = [ 
@@ -393,10 +384,10 @@ module FileColumn # :nodoc:
   #   (see below). Note that
   #   you can simply call your upload field "entry[image]" in your view (or use the
   #   helper).
-  # * <tt>Entry#image(suffix=nil)</tt>: This will return an absolute path (as a
+  # * <tt>Entry#image(subdir=nil)</tt>: This will return an absolute path (as a
   #   string) to the currently uploaded file
   #   or nil if no file has been uploaded
-  # * <tt>Entry#image_relative_path(suffix)</tt>: This will return a path relative to
+  # * <tt>Entry#image_relative_path(subdir=nil)</tt>: This will return a path relative to
   #   this file column's base directory
   #   as a string or nil if no file has been uploaded. This would be "42/test.png" in the example.
   # * <tt>Entry#image_just_uploaded?</tt>: Returns true if a new file has been uploaded to this instance.
@@ -436,20 +427,20 @@ module FileColumn # :nodoc:
   # update fails for some reasons (e.g. due to validations), the existing image will not be overwritten, so
   # it has a kind of "transactional behaviour".
   #
-  # == Suffixes
+  # == Additional Files and Directories
   #
   # FileColumn allows you to keep more than one file in a directory and will move/delete
-  # all the files it finds in a model object's directory when necessary. You can access
-  # these files via the optional suffix parameter that some of the generated methods
-  # accept (see above). This suffix is inserted into the filename before the extension,
-  # separated by a dash.
+  # all the files and directories it finds in a model object's directory when necessary.
+  #
+  # As a convenience you can access files stored in sub-directories via the +subdir+
+  # parameter if they have the same filename.
   #
   # Suppose your uploaded file is named "vancouver.jpg" and you want to create a
-  # thumb-nail and store it in the same directory. If you cal
+  # thumb-nail and store it in the "thumb" directory. If you cal
   # <tt>image("thumb")</tt>, you
-  # will receive an absolute path for the file "vancouver-thumb.jpg" in the same
+  # will receive an absolute path for the file "thumb/vancouver.jpg" in the same
   # directory "vancouver.jpg" is stored. Look at the documentation of FileColumn::Magick
-  # for more examples.
+  # for more examples and how to create these thumb-nails automatically.
   #
   # == File Extensions
   #
@@ -580,9 +571,10 @@ module FileColumn # :nodoc:
       end
 
       define_method "#{attr}=" do |file|
-        instance_variable_set state_attr, send(state_method).assign(file)
-        if my_options[:after_assign]
-          my_options[:after_assign].each do |sym|
+        state = send(state_method).assign(file)
+        instance_variable_set state_attr, state
+        if state.options[:after_upload] and state.just_uploaded?
+          state.options[:after_upload].each do |sym|
             self.send sym
           end
         end

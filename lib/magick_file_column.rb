@@ -13,6 +13,9 @@ module FileColumn # :nodoc:
           
         if options[:magick][:versions]
           options[:magick][:versions].each_pair do |name, version_options|
+            next if version_options[:lazy]
+            dirname = version_options[:name]
+            FileUtils.mkdir File.join(@dir, name)
             resize_image(img, version_options[:geometry], absolute_path(name))
           end
         end
@@ -85,8 +88,10 @@ module FileColumn # :nodoc:
       if options[:magick][:versions]
         options[:magick][:versions].each_pair do |name, value|
           if value.kind_of?(String)
-            options[:magick][:versions][name] = {:geometry => value}
+            value = {:geometry => value}
           end
+          value[:name] = value.hash.abs.to_s(36) unless value[:name]
+          options[:magick][:versions][name] = value
         end
       end
       state_method = "#{attr}_state".to_sym
@@ -96,8 +101,8 @@ module FileColumn # :nodoc:
         self.send(state_method).transform_with_magick
       end
       
-      options[:after_assign] ||= []
-      options[:after_assign] << after_assign_method
+      options[:after_upload] ||= []
+      options[:after_upload] << after_assign_method
       
       klass.validate do |record|
         state = record.send(state_method)

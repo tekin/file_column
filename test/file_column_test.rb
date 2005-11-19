@@ -1,19 +1,28 @@
 require 'abstract_unit'
 
 class Entry < ActiveRecord::Base
-    attr_accessor :validation_should_fail
-    
-    def validate
-        errors.add("image","some stupid error") if @validation_should_fail
-    end
+  attr_accessor :validation_should_fail
 
-    def after_assign
-      @after_assign_called = true
-    end
+  def validate
+    errors.add("image","some stupid error") if @validation_should_fail
+  end
+  
+  def after_assign
+    @after_assign_called = true
+  end
+  
+  def after_assign_called?
+    @after_assign_called
+  end
+  
+  def after_save
+    @after_save_called = true
+  end
 
-    def after_assign_called?
-      @after_assign_called
-    end
+  def after_save_called?
+    @after_save_called
+  end
+  
 end
 
 class Movie < ActiveRecord::Base
@@ -186,15 +195,19 @@ class FileColumnTest < Test::Unit::TestCase
     e.image_relative_dir
   end
 
-  def test_suffix_parameter
+  def test_subdir_parameter
     e = Entry.new
     assert_nil e.image("thumb")
     assert_nil e.image("thumb")
 
     e.image = uploaded_file(file_path("kerb.jpg"), "image/jpeg", "kerb.jpg")
     
-    assert_equal "kerb-thumb.jpg", File.basename(e.image("thumb"))
-    assert_equal "kerb-thumb.jpg", File.basename(e.image_relative_path("thumb"))  end
+    assert_equal "kerb.jpg", File.basename(e.image("thumb"))
+    assert_equal "kerb.jpg", File.basename(e.image_relative_path("thumb"))
+
+    assert_equal File.join(e.image_dir,"thumb","kerb.jpg"), e.image("thumb")
+    assert_match %r{/thumb/kerb\.jpg$}, e.image_relative_path("thumb") 
+  end
 
   def test_absolute_path_is_simple
     # we make :root_path more complicated to test that it is normalized in absolute paths
@@ -430,11 +443,19 @@ class FileColumnTest < Test::Unit::TestCase
     assert File.exists?(e.image)
   end
 
-  def test_after_assign
-    Entry.file_column :image, :after_assign => [:after_assign]
+  def test_should_call_after_upload_on_new_upload
+    Entry.file_column :image, :after_upload => [:after_assign]
     e = Entry.new
     e.image = upload("skanthak.png")
     assert e.after_assign_called?
+  end
+
+  def test_should_call_user_after_save_on_save
+    e = Entry.new(:image => upload("skanthak.png"))
+    assert e.save
+    
+    assert_kind_of FileColumn::PermanentUploadedFile, e.send(:image_state)
+    assert e.after_save_called?
   end
 end
 
