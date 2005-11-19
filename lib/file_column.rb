@@ -8,12 +8,12 @@ module FileColumn # :nodoc:
     base.extend(ClassMethods)
   end
 
-  def self.create_state(options,instance,attr)
+  def self.create_state(instance,attr)
     filename = instance[attr]
     if filename.nil? or filename.empty?
-      NoUploadedFile.new(options,instance,attr)
+      NoUploadedFile.new(instance,attr)
     else
-      PermanentUploadedFile.new(options,instance,attr)
+      PermanentUploadedFile.new(instance,attr)
     end
   end
 
@@ -29,8 +29,9 @@ module FileColumn # :nodoc:
 
   class BaseUploadedFile # :nodoc:
 
-    def initialize(options,instance,attr)
-      @options, @instance, @attr = options, instance, attr
+    def initialize(instance,attr)
+      @instance, @attr = instance, attr
+      @options_method = "#{attr}_options".to_sym
     end
 
 
@@ -87,20 +88,22 @@ module FileColumn # :nodoc:
     def after_destroy
     end
 
-    attr_accessor :options
+    def options
+      @instance.send(@options_method)
+    end
 
     private
     
     def store_dir
-      @options[:store_dir]
+      options[:store_dir]
     end
 
     def tmp_base_dir
-      @options[:tmp_base_dir]
+      options[:tmp_base_dir]
     end
 
     def clone_as(klass)
-      klass.new(@options, @instance, @attr)
+      klass.new(@instance, @attr)
     end
 
   end
@@ -166,7 +169,7 @@ module FileColumn # :nodoc:
       EXT_REGEXPS.each do |regexp|
         if filename =~ regexp
           base,ext = $1, $2
-          return [base, ext] if @options[:extensions].include?(ext.downcase)
+          return [base, ext] if options[:extensions].include?(ext.downcase)
         end
       end
       if fallback and filename =~ EXT_REGEXPS.last
@@ -198,12 +201,12 @@ module FileColumn # :nodoc:
         raise ArgumentError.new("Do not know how to handle #{file.inspect}")
       end
 
-      if @options[:fix_file_extensions]
+      if options[:fix_file_extensions]
         # try to determine correct file extension and fix
         # if necessary
         content_type = get_content_type((file.content_type.chomp if file.content_type))
-        if content_type and @options[:mime_extensions][content_type]
-          @filename = correct_extension(@filename,@options[:mime_extensions][content_type])
+        if content_type and options[:mime_extensions][content_type]
+          @filename = correct_extension(@filename,options[:mime_extensions][content_type])
         end
 
         new_local_file_path = File.join(tmp_base_dir,@tmp_dir,@filename)
@@ -218,7 +221,7 @@ module FileColumn # :nodoc:
 
     # tries to identify and strip the extension of filename
     # if an regular expresion from EXT_REGEXPS matches and the
-    # downcased extension is a known extension (in @options[:extensions])
+    # downcased extension is a known extension (in options[:extensions])
     # we'll strip this extension
     def strip_extension(filename)
       split_extension(filename).first
@@ -288,9 +291,9 @@ module FileColumn # :nodoc:
     end
 
     def get_content_type(fallback=nil)
-      if @options[:file_exec]
+      if options[:file_exec]
         begin
-          content_type = `#{@options[:file_exec]} -bi "#{@local_file_path}"`.chomp
+          content_type = `#{options[:file_exec]} -bi "#{@local_file_path}"`.chomp
           content_type = fallback unless $?.success?
           content_type.gsub!(/;.+$/,"") if content_type
           content_type
@@ -552,7 +555,7 @@ module FileColumn # :nodoc:
       define_method state_method do
         result = instance_variable_get state_attr
         if result.nil?
-          result = FileColumn::create_state(my_options, self, attr.to_s)
+          result = FileColumn::create_state(self, attr.to_s)
           instance_variable_set state_attr, result
         end
         result
@@ -611,9 +614,12 @@ module FileColumn # :nodoc:
       define_method "#{attr}_just_uploaded?" do
         send(state_method).just_uploaded?
       end
-      
+
+      # this creates a closure keeping a reference to my_options
+      # right now that's the only way we store the options. We
+      # might use a class attribute as well
       define_method "#{attr}_options" do
-        send(state_method).options
+        my_options
       end
       
       private after_save_method, after_destroy_method

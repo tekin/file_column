@@ -121,14 +121,16 @@ class FileColumnTest < Test::Unit::TestCase
     assert_equal "local_filename.tar.gz", e["image"]
   end
 
+  FILE_UTILITY = "/usr/bin/file"
+
   def test_get_content_type_with_file
-    options = FileColumn::ClassMethods::DEFAULT_OPTIONS.dup
-    options[:file_exec] = "/usr/bin/file"
+    Entry.file_column :image, :file_exec => FILE_UTILITY
 
     # run this test only if the machine we are running on
     # has the file utility installed
-    if File.executable?(options[:file_exec])
-      file = FileColumn::TempUploadedFile.new(options, nil, nil)
+    if File.executable?(FILE_UTILITY)
+      e = Entry.new
+      file = FileColumn::TempUploadedFile.new(e, "image")
       file.instance_variable_set :@local_file_path, file_path("kerb.jpg")
       
       assert_equal "image/jpeg", file.get_content_type
@@ -138,20 +140,16 @@ class FileColumnTest < Test::Unit::TestCase
   end
 
   def test_do_not_fix_file_extensions
-    options = FileColumn::ClassMethods::DEFAULT_OPTIONS.dup
-    options[:base_path] = File.join(options[:root_path], "entry")
-    options = FileColumn.init_options(options, "entry", "image")
-    options[:fix_file_extensions] = nil
+    Entry.file_column :image, :fix_file_extensions => false
 
-    entry = Entry.new
-    file = FileColumn::NoUploadedFile.new(options, entry, "image")
-    file = file.assign uploaded_file(file_path("kerb.jpg"), "image/jpeg", "kerb")
+    e = Entry.new(:image => uploaded_file(file_path("kerb.jpg"), "image/jpeg", "kerb"))
 
-    assert_equal "kerb", File.basename(file.absolute_path)
+    assert_equal "kerb", File.basename(e.image)
   end
 
   def test_correct_extension
-    file = FileColumn::TempUploadedFile.new(FileColumn::ClassMethods::DEFAULT_OPTIONS, nil, nil)
+    e = Entry.new
+    file = FileColumn::TempUploadedFile.new(e, "image")
     
     assert_equal "filename.jpg", file.correct_extension("filename.jpeg","jpg")
     assert_equal "filename.tar.gz", file.correct_extension("filename.jpg","tar.gz")

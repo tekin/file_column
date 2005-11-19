@@ -11,13 +11,13 @@ module FileColumn # :nodoc:
           return
         end
           
-        if @options[:magick][:versions]
-          @options[:magick][:versions].each_pair do |name, version_options|
+        if options[:magick][:versions]
+          options[:magick][:versions].each_pair do |name, version_options|
             resize_image(img, version_options[:geometry], absolute_path(name))
           end
         end
-        if @options[:magick][:geometry]
-          resize_image(img, @options[:magick][:geometry], absolute_path)
+        if options[:magick][:geometry]
+          resize_image(img, options[:magick][:geometry], absolute_path)
         end
       end
     end
@@ -31,8 +31,8 @@ module FileColumn # :nodoc:
     private
     
     def needs_resize?
-      @options[:magick] and just_uploaded? and 
-        (@options[:magick][:geometry] or@options[:magick][:versions])
+      options[:magick] and just_uploaded? and 
+        (options[:magick][:geometry] or options[:magick][:versions])
     end
 
     def resize_image(img, geometry, path)
