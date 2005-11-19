@@ -44,7 +44,14 @@ class Test::Unit::TestCase
     return t
   end
 
-  def upload(basename, content_type="image/jpeg")
+  def upload(basename, content_type=:guess)
+    if content_type == :guess
+      case basename
+        when /\.jpg$/ then content_type = "image/jpeg"
+        when /\.png$/ then content_type = "image/png"
+        else content_type = nil
+      end
+    end
     uploaded_file(file_path(basename), content_type, basename)
   end
 

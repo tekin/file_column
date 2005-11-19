@@ -422,16 +422,6 @@ class FileColumnTest < Test::Unit::TestCase
     assert_raise(TypeError) { e.image ="img42.jpg" }
   end
 
-  def test_move_additional_files_from_tmp
-    e = Entry.new
-    e.image = uploaded_file(file_path("skanthak.png"), "image/png", "skanthak.png")
-    FileUtils.cp file_path("kerb.jpg"), File.dirname(e.image)
-    assert e.save
-    dir = File.dirname(e.image)
-    assert File.exists?(File.join(dir, "skanthak.png"))
-    assert File.exists?(File.join(dir, "kerb.jpg"))
-  end
-
   def test_serializable_before_save
     e = Entry.new
     e.image = uploaded_file(file_path("skanthak.png"), "image/png", "skanthak.png")
@@ -447,5 +437,71 @@ class FileColumnTest < Test::Unit::TestCase
     e = Entry.new
     e.image = upload("skanthak.png")
     assert e.after_assign_called?
+  end
+end
+
+# Tests for moving temp dir to permanent dir
+class FileColumnMoveTest < Test::Unit::TestCase
+  
+  def setup
+    # we define the file_columns here so that we can change
+    # settings easily in a single test
+
+    Entry.file_column :image
+    
+  end
+  
+  def teardown
+    FileUtils.rm_rf File.dirname(__FILE__)+"/public/entry/"
+  end
+
+  def test_should_move_additional_files_from_tmp
+    e = Entry.new
+    e.image = uploaded_file(file_path("skanthak.png"), "image/png", "skanthak.png")
+    FileUtils.cp file_path("kerb.jpg"), File.dirname(e.image)
+    assert e.save
+    dir = File.dirname(e.image)
+    assert File.exists?(File.join(dir, "skanthak.png"))
+    assert File.exists?(File.join(dir, "kerb.jpg"))
+  end
+
+  def test_should_move_direcotries_on_save
+    e = Entry.new(:image => upload("skanthak.png"))
+    
+    FileUtils.mkdir( e.image_dir+"/foo" )
+    FileUtils.cp file_path("kerb.jpg"), e.image_dir+"/foo/kerb.jpg"
+    
+    assert e.save
+
+    assert File.exists?(e.image)
+    assert File.exists?(File.dirname(e.image)+"/foo/kerb.jpg")
+  end
+
+  def test_should_overwrite_dirs_with_files_on_reupload
+    e = Entry.new(:image => upload("skanthak.png"))
+
+    FileUtils.mkdir( e.image_dir+"/kerb.jpg")
+    FileUtils.cp file_path("kerb.jpg"), e.image_dir+"/kerb.jpg/"
+    assert e.save
+
+    e.image = upload("kerb.jpg")
+    assert e.save
+
+    assert File.file?(e.image_dir+"/kerb.jpg")
+  end
+
+  def test_should_overwrite_files_with_dirs_on_reupload
+    e = Entry.new(:image => upload("skanthak.png"))
+
+    assert e.save
+    assert File.file?(e.image_dir+"/skanthak.png")
+
+    e.image = upload("kerb.jpg")
+    FileUtils.mkdir(e.image_dir+"/skanthak.png")
+    
+    assert e.save
+    assert File.file?(e.image_dir+"/kerb.jpg")
+    assert !File.file?(e.image_dir+"/skanthak.png")
+    assert File.directory?(e.image_dir+"/skanthak.png")
   end
 end

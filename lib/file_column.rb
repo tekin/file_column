@@ -319,19 +319,15 @@ module FileColumn # :nodoc:
     end
 
     def move_from(local_dir, just_uploaded)
-      # create a directory named after the primary key, first
-      FileUtils.mkdir(@dir) unless File.exists?(@dir)
+      # remove old permament dir first
+      # this creates a short moment, where neither the old nor
+      # the new files exist but we can't do much about this as
+      # filesystems aren't transactional.
+      FileUtils.rm_rf @dir
 
-      # move the temporary files over
-      FileUtils.cp Dir.glob(File.join(local_dir, "*")), @dir
-      
+      FileUtils.mv local_dir, @dir
+
       @just_uploaded = just_uploaded
-
-      # remove all old files in the directory
-      FileUtils.rm(Dir.glob(File.join(@dir, "*")).reject! {
-                     |e| File.exists?(File.join(local_dir, File.basename(e)))
-                   })
-      
     end
 
     def upload(file)
