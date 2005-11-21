@@ -198,7 +198,8 @@ class FileColumnTest < Test::Unit::TestCase
   def test_subdir_parameter
     e = Entry.new
     assert_nil e.image("thumb")
-    assert_nil e.image("thumb")
+    assert_nil e.image_relative_path("thumb")
+    assert_nil e.image(nil)
 
     e.image = uploaded_file(file_path("kerb.jpg"), "image/jpeg", "kerb.jpg")
     
@@ -207,6 +208,9 @@ class FileColumnTest < Test::Unit::TestCase
 
     assert_equal File.join(e.image_dir,"thumb","kerb.jpg"), e.image("thumb")
     assert_match %r{/thumb/kerb\.jpg$}, e.image_relative_path("thumb") 
+
+    assert_equal e.image, e.image(nil)
+    assert_equal e.image_relative_path, e.image_relative_path(nil)
   end
 
   def test_absolute_path_is_simple

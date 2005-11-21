@@ -15,8 +15,8 @@ module FileColumn # :nodoc:
           options[:magick][:versions].each_pair do |name, version_options|
             next if version_options[:lazy]
             dirname = version_options[:name]
-            FileUtils.mkdir File.join(@dir, name)
-            resize_image(img, version_options[:geometry], absolute_path(name))
+            FileUtils.mkdir File.join(@dir, dirname)
+            resize_image(img, version_options[:geometry], absolute_path(dirname))
           end
         end
         if options[:magick][:geometry]
@@ -24,7 +24,28 @@ module FileColumn # :nodoc:
         end
       end
     end
-      
+
+    def create_magick_version_if_needed(version)
+      case version
+      when Symbol
+        version_options = options[:magick][:versions][version]
+      when String
+        version_options = {:geometry => version}
+      else
+        version_options = version
+      end
+      version_options[:name] = version_options.hash.abs.to_s(36) unless version_options[:name]
+
+      unless File.exists?(absolute_path(version_options[:name]))
+        img = ::Magick::Image::read(absolute_path).first
+        dirname = version_options[:name]
+        FileUtils.mkdir File.join(@dir, dirname)
+        resize_image(img, version_options[:geometry], absolute_path(dirname))
+      end
+
+      version_options[:name]
+    end
+
     attr_reader :magick_errors
     
     def has_magick_errors?
@@ -38,11 +59,11 @@ module FileColumn # :nodoc:
         (options[:magick][:geometry] or options[:magick][:versions])
     end
 
-    def resize_image(img, geometry, path)
+    def resize_image(img, geometry, dest_path)
       new_img = img.change_geometry(geometry) do |c, r, i|
         i.resize(c, r)
       end
-      new_img.write path
+      new_img.write dest_path
     end
   end
 
@@ -64,19 +85,14 @@ module FileColumn # :nodoc:
   # You can also create additional versions of your image, for example
   # thumb-nails, like this:
   #    file_column :image, :magick => {:versions => 
-  #      { "thumb" => "50x50", "medium" => "640x480>" }
+  #      { :thumb => "50x50", :medium => "640x480>" }
   #    }
   #
-  # These versions can later be accessed via file_column's <em>suffix</em>
-  # mechanism. So if the uploaded image was named "vancouver.jpg", you can
-  # access the additional versions like this:
+  # These versions will be stored in separate sub-directories and cann
+  # be accessed via FileColumnHelper's +url_for_file_column+ method
+  # like this:
   #
-  #    o.image("thumb") # produces ".../vancouver-thumb.jpg"
-  #    o.image_relative_path("medium") # produces ".../vancouver-medium.jpg"
-  #
-  # The same mechanism can be used in the +url_for_file_column+ helper:
-  #
-  #    <%= url_for_file_column "entry", "image", "thumb" %>
+  #    <%= url_for_file_column "entry", "image", :thumb %>
   #
   # <b>Note:</b> You'll need the
   # rmagick extension installed as a gem in order to use file_column's

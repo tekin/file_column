@@ -43,20 +43,29 @@ module FileColumnHelper
   # If there is currently no uploaded file stored in the object's column this method will
   # return +nil+.
   #
-  # If the optional +suffix+ parameter is given, it will be inserted into the filename
-  # before the extension. So if the uploaded file is name "vancouver.jpg" and you have
-  # the following code in your view
+  # If your +options+ parameter contains a key <tt>:version</tt> this will
+  # access a different version of an image that will be produced by
+  # RMagick. You can use the following types of versions:
   #
-  #    <%= url_for_file_column("entry", "image", "thumb") %>
-  #
-  # the resulting URL's would point to a file "vancouver-thumb.jpg". This can be used to
-  # access different versions of a file as produced by FileColumn::Magick, for example.
+  # * <tt>:version => :symbol</tt> will select a version defined in the model
+  #   via FileColumn::Magick's version feature.
+  # * <tt>:version => geometry_string</tt> will dynamically create an
+  #   image resized as specified by <tt>geometry_string</tt>. The image will
+  #   be stored so that it does not have to be recomputed the next time the
+  #   same version string is used.
+  # * <tt>:version => some_hash</tt> will dynamically create an image
+  #   that is created according to the options in <tt>some_hash</tt>. This
+  #   accepts exactly the same options as Magick's version feature.
   #
   # Note that the object has to be stored in an instance variable. So if +object_name+ is
   # "entry" your object has to be stored in <tt>@entry</tt>.
-  def url_for_file_column(object_name, method, suffix=nil)
+  def url_for_file_column(object_name, method, options=nil)
     object = instance_variable_get("@#{object_name.to_s}")
-    relative_path = object.send("#{method}_relative_path", suffix)
+    subdir = nil
+    if options and options[:version]
+      subdir = object.send("#{method}_state").create_magick_version_if_needed(options[:version])
+    end
+    relative_path = object.send("#{method}_relative_path", subdir)
     return nil unless relative_path
     url = ""
     url << @request.relative_url_root.to_s << "/"

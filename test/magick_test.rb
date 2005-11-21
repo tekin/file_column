@@ -108,8 +108,35 @@ class RMagickVersionsTest < AbstractRMagickTest
     assert_max_image_size read_image(e.image("thumb")), 50
   end
 
+  def test_version_name_can_be_different_from_key
+    e = Entry.new("image" => upload("skanthak.png"))
+    
+    assert File.exists?(e.image(e.image_options[:magick][:versions][:medium][:name]))
+    assert !File.exists?(e.image("medium"))
+  end
+
   def test_should_not_create_lazy_versions
     e = Entry.new("image" => upload("skanthak.png"))
     assert !File.exists?(e.image("large")), "lazy versions should not be created unless needed"
+  end
+
+  def test_should_create_lazy_version_on_demand
+    e = Entry.new("image" => upload("skanthak.png"))
+    
+    e.send(:image_state).create_magick_version_if_needed(:large)
+    
+    assert File.exists?(e.image("large")), "lazy version should be created on demand"
+    
+    assert_max_image_size read_image(e.image("large")), 150
+  end
+
+  def test_should_create_version_with_string
+    e = Entry.new("image" => upload("skanthak.png"))
+    
+    name = e.send(:image_state).create_magick_version_if_needed("32x32")
+    
+    assert File.exists?(e.image(name))
+
+    assert_max_image_size read_image(e.image(name)), 32
   end
 end
