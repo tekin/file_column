@@ -150,3 +150,23 @@ class RMagickVersionsTest < AbstractRMagickTest
     assert_max_image_size read_image(e.image(name)), 32
   end
 end
+
+class RMagickCroppingTest < AbstractRMagickTest
+  def setup
+    Entry.file_column :image, :magick => {:geometry => "200x200",
+      :versions => {
+        :thumb => {:crop => "1:1", :geometry => "50x50", :name => "thumb" }
+      }
+    }
+  end
+  
+  def test_should_crop_image_on_upload
+    e = Entry.new("image" => upload("skanthak.png"))
+    
+    img = read_image(e.image("thumb"))
+    
+    assert_equal 50, img.rows 
+    assert_equal 50, img.columns
+  end
+    
+end

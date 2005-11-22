@@ -10,18 +10,20 @@ module FileColumn # :nodoc:
           @magick_errors << "invalid image"
           return
         end
-          
+        
         if options[:magick][:versions]
-          options[:magick][:versions].each_pair do |name, version_options|
+          options[:magick][:versions].each_pair do |version, version_options|
             next if version_options[:lazy]
             dirname = version_options[:name]
             FileUtils.mkdir File.join(@dir, dirname)
-            resize_image(img, version_options[:geometry], absolute_path(dirname))
+            resize_image(img, version_options, absolute_path(dirname))
           end
         end
-        if options[:magick][:geometry]
-          resize_image(img, options[:magick][:geometry], absolute_path)
+        if options[:magick][:geometry] or options[:magick][:crop]
+          resize_image(img, options[:magick], absolute_path)
         end
+
+        GC.start
       end
     end
 
@@ -36,7 +38,7 @@ module FileColumn # :nodoc:
         img = ::Magick::Image::read(absolute_path).first
         dirname = version_options[:name]
         FileUtils.mkdir File.join(@dir, dirname)
-        resize_image(img, version_options[:geometry], absolute_path(dirname))
+        resize_image(img, version_options, absolute_path(dirname))
       end
 
       version_options[:name]
@@ -54,12 +56,24 @@ module FileColumn # :nodoc:
       options[:magick] and just_uploaded? and 
         (options[:magick][:geometry] or options[:magick][:versions])
     end
+    
+    def resize_image(img, img_options, dest_path)
+      begin
+        if img_options[:crop]
+          dx, dy = img_options[:crop].split(':').map { |x| x.to_f }
+          w, h = (img.rows * dx / dy), (img.columns * dy / dx)
+          img = img.crop(::Magick::CenterGravity, [img.columns, w].min, 
+                         [img.rows, h].min)
+        end
 
-    def resize_image(img, geometry, dest_path)
-      new_img = img.change_geometry(geometry) do |c, r, i|
-        i.resize(c, r)
+        if img_options[:geometry]
+          img = img.change_geometry(img_options[:geometry]) do |c, r, i|
+            i.resize(c, r)
+          end
+        end
+      ensure
+        img.write dest_path
       end
-      new_img.write dest_path
     end
   end
 
@@ -80,8 +94,18 @@ module FileColumn # :nodoc:
   #
   # You can also create additional versions of your image, for example
   # thumb-nails, like this:
-  #    file_column :image, :magick => {:versions => 
-  #      { :thumb => "50x50", :medium => "640x480>" }
+  #    file_column :image, :magick => {:versions => {
+  #         "thumb" => {:geometry => "50x50"},
+  #         "medium" => {:geometry => "640x480>"}
+  #       }
+  #
+  # If you wish to crop your images with a size ratio before scaling
+  # them according to your version geometry, you can use the :crop directive.
+  #    file_column :image, :magick => {:versions => {
+  #         "square" => {:crop => "1:1", :geometry => "50x50"},
+  #         "screen" => {:crop => "4:3", :geometry => "640x480>"},
+  #         "widescreen" => {:crop => "16:9", :geometry => "640x360!"},
+  #       }
   #    }
   #
   # These versions will be stored in separate sub-directories and cann
@@ -91,8 +115,8 @@ module FileColumn # :nodoc:
   #    <%= url_for_file_column "entry", "image", :thumb %>
   #
   # <b>Note:</b> You'll need the
-  # rmagick extension installed as a gem in order to use file_column's
-  # rmagick integration.
+  # RMagick extension installed as a gem in order to use file_column's
+  # imagemagick integration.
   module Magick
 
     def self.file_column(klass, attr, options) # :nodoc:
