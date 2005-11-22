@@ -26,15 +26,11 @@ module FileColumn # :nodoc:
     end
 
     def create_magick_version_if_needed(version)
-      case version
-      when Symbol
+      if version.is_a?(Symbol)
         version_options = options[:magick][:versions][version]
-      when String
-        version_options = {:geometry => version}
       else
-        version_options = version
+        version_options = Magick::process_options(version)
       end
-      version_options[:name] = version_options.hash.abs.to_s(36) unless version_options[:name]
 
       unless File.exists?(absolute_path(version_options[:name]))
         img = ::Magick::Image::read(absolute_path).first
@@ -103,11 +99,7 @@ module FileColumn # :nodoc:
       require 'RMagick'
       if options[:magick][:versions]
         options[:magick][:versions].each_pair do |name, value|
-          if value.kind_of?(String)
-            value = {:geometry => value}
-          end
-          value[:name] = value.hash.abs.to_s(36) unless value[:name]
-          options[:magick][:versions][name] = value
+          options[:magick][:versions][name] = process_options(value)
         end
       end
       state_method = "#{attr}_state".to_sym
@@ -129,6 +121,18 @@ module FileColumn # :nodoc:
         end
       end
     end
+
     
+    def self.process_options(options)
+      options = {:geometry => options } if options.kind_of?(String)
+      unless options[:name]
+        hash = 0
+        for key in [:geometry, :crop]
+          hash = hash ^ options[key].hash if options[key]
+        end
+        options[:name] = hash.abs.to_s(36)
+      end
+      options
+    end
   end
 end

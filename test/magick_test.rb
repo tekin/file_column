@@ -130,6 +130,16 @@ class RMagickVersionsTest < AbstractRMagickTest
     assert_max_image_size read_image(e.image("large")), 150
   end
 
+  def test_generated_name_should_not_change
+    e = Entry.new("image" => upload("skanthak.png"))
+    
+    name1 = e.send(:image_state).create_magick_version_if_needed("50x50")
+    name2 = e.send(:image_state).create_magick_version_if_needed("50x50")
+    name3 = e.send(:image_state).create_magick_version_if_needed(:geometry => "50x50")
+    assert_equal name1, name2, "hash value has changed"
+    assert_equal name1, name3, "hash value has changed"
+  end
+
   def test_should_create_version_with_string
     e = Entry.new("image" => upload("skanthak.png"))
     
