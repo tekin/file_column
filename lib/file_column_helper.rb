@@ -42,31 +42,10 @@ module FileColumnHelper
   #
   # If there is currently no uploaded file stored in the object's column this method will
   # return +nil+.
-  #
-  # If your +options+ parameter contains a key <tt>:version</tt> this will
-  # access a different version of an image that will be produced by
-  # RMagick. You can use the following types of versions:
-  #
-  # * <tt>:version => :symbol</tt> will select a version defined in the model
-  #   via FileColumn::Magick's version feature.
-  # * <tt>:version => geometry_string</tt> will dynamically create an
-  #   image resized as specified by <tt>geometry_string</tt>. The image will
-  #   be stored so that it does not have to be recomputed the next time the
-  #   same version string is used.
-  # * <tt>:version => some_hash</tt> will dynamically create an image
-  #   that is created according to the options in <tt>some_hash</tt>. This
-  #   accepts exactly the same options as Magick's version feature.
-  #
-  # Note that if you pass a string or a symbol as the +object+ parameter,
-  # the file_column will be looked up in instance variable named +object+.
-  def url_for_file_column(object, method, options=nil)
+  def url_for_file_column(object, method, subdir=nil)
     case object
     when String, Symbol
       object = instance_variable_get("@#{object.to_s}")
-    end
-    subdir = nil
-    if options and options[:version]
-      subdir = object.send("#{method}_state").create_magick_version_if_needed(options[:version])
     end
     relative_path = object.send("#{method}_relative_path", subdir)
     return nil unless relative_path
@@ -74,5 +53,61 @@ module FileColumnHelper
     url << @request.relative_url_root.to_s << "/"
     url << object.send("#{method}_options")[:base_url] << "/"
     url << relative_path
+  end
+
+  # Same as +url_for_file_colum+ but allows you to access different versions
+  # of the image that have been processed by RMagick.
+  #
+  # If your +options+ parameter is non-nil this will
+  # access a different version of an image that will be produced by
+  # RMagick. You can use the following types for +options+:
+  #
+  # * a <tt>:symbol</tt> will select a version defined in the model
+  #   via FileColumn::Magick's <tt>:versions</tt> feature.
+  # * a <tt>geometry_string</tt> will dynamically create an
+  #   image resized as specified by <tt>geometry_string</tt>. The image will
+  #   be stored so that it does not have to be recomputed the next time the
+  #   same version string is used.
+  # * <tt>some_hash</tt> will dynamically create an image
+  #   that is created according to the options in <tt>some_hash</tt>. This
+  #   accepts exactly the same options as Magick's version feature.
+  #
+  # The version produces by RMagick will be stored in a special sub-directories.
+  # The directories name will be derived from the options you specify but if want
+  # to set it yourself, you can use the <tt>:name => name</tt> option.
+  #
+  # Examples:
+  #
+  #    <%= url_for_image_column @entry, "image", "640x480" %>
+  #
+  # will produce an URL like this
+  #
+  #    /entry/image/42/bdn19n/filename.jpg
+  #    # "640x480".hash.abs.to_s(36) == "bdn19n"
+  #
+  # and
+  #
+  #    <%= url_for_image_column @entry, "image", 
+  #       :size => "50x50", :crop => "1:1", :name => "thumb" %>
+  #
+  # will produce something like this:
+  #
+  #    /entry/image/42/thumb/filename.jpg
+  #
+  # Hint: If you are using the same geometry string / options hash multiple times, you should
+  # define it in a helper to stay with DRY. Another option is to define it in the model via
+  # FileColumn::Magick's <tt>:versions</tt> feature and then refer to it via a symbol.
+  #
+  # If there is currently no image uploaded, this method will return +nil+.
+  def url_for_image_column(object, method, options=nil)
+    case object
+    when String, Symbol
+      object = instance_variable_get("@#{object.to_s}")
+    end
+    subdir = nil
+    if options
+      subdir = object.send("#{method}_state").create_magick_version_if_needed(options)
+    end
+    url_for_file_column(object, method, subdir)
   end
 end

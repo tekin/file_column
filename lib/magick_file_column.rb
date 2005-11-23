@@ -19,7 +19,7 @@ module FileColumn # :nodoc:
             resize_image(img, version_options, absolute_path(dirname))
           end
         end
-        if options[:magick][:geometry] or options[:magick][:crop]
+        if options[:magick][:size] or options[:magick][:crop]
           resize_image(img, options[:magick], absolute_path)
         end
 
@@ -28,6 +28,16 @@ module FileColumn # :nodoc:
     end
 
     def create_magick_version_if_needed(version)
+      # RMagick might not have been loaded so far.
+      # We do not want to require it on every call of this method
+      # as this might be fairly expensive, so we just try if ::Magick
+      # exists and require it if not.
+      begin 
+        ::Magick 
+      rescue NameError
+        require 'RMagick'
+      end
+
       if version.is_a?(Symbol)
         version_options = options[:magick][:versions][version]
       else
@@ -54,7 +64,7 @@ module FileColumn # :nodoc:
     
     def needs_resize?
       options[:magick] and just_uploaded? and 
-        (options[:magick][:geometry] or options[:magick][:versions])
+        (options[:magick][:size] or options[:magick][:versions])
     end
     
     def resize_image(img, img_options, dest_path)
@@ -66,8 +76,8 @@ module FileColumn # :nodoc:
                          [img.rows, h].min)
         end
 
-        if img_options[:geometry]
-          img = img.change_geometry(img_options[:geometry]) do |c, r, i|
+        if img_options[:size]
+          img = img.change_geometry(img_options[:size]) do |c, r, i|
             i.resize(c, r)
           end
         end
@@ -88,23 +98,23 @@ module FileColumn # :nodoc:
   # after a new file is assigned to the file_column attribute.
   #
   # To resize the uploaded image according to an imagemagick geometry
-  # string, just use the <tt>:geometry</tt> option:
+  # string, just use the <tt>:size</tt> option:
   #
-  #    file_column :image, :magick => {:geometry => "800x600>"}
+  #    file_column :image, :magick => {:size => "800x600>"}
   #
   # You can also create additional versions of your image, for example
   # thumb-nails, like this:
   #    file_column :image, :magick => {:versions => {
-  #         "thumb" => {:geometry => "50x50"},
-  #         "medium" => {:geometry => "640x480>"}
+  #         "thumb" => {:size => "50x50"},
+  #         "medium" => {:size => "640x480>"}
   #       }
   #
   # If you wish to crop your images with a size ratio before scaling
   # them according to your version geometry, you can use the :crop directive.
   #    file_column :image, :magick => {:versions => {
-  #         "square" => {:crop => "1:1", :geometry => "50x50"},
-  #         "screen" => {:crop => "4:3", :geometry => "640x480>"},
-  #         "widescreen" => {:crop => "16:9", :geometry => "640x360!"},
+  #         "square" => {:crop => "1:1", :size => "50x50"},
+  #         "screen" => {:crop => "4:3", :size => "640x480>"},
+  #         "widescreen" => {:crop => "16:9", :size => "640x360!"},
   #       }
   #    }
   #
@@ -121,6 +131,7 @@ module FileColumn # :nodoc:
 
     def self.file_column(klass, attr, options) # :nodoc:
       require 'RMagick'
+      options[:magick] = process_options(options[:magick],false) if options[:magick]
       if options[:magick][:versions]
         options[:magick][:versions].each_pair do |name, value|
           options[:magick][:versions][name] = process_options(value)
@@ -147,16 +158,20 @@ module FileColumn # :nodoc:
     end
 
     
-    def self.process_options(options)
-      options = {:geometry => options } if options.kind_of?(String)
-      unless options[:name]
+    def self.process_options(options,create_name=true)
+      options = {:size => options } if options.kind_of?(String)
+      if options[:geometry]
+        options[:size] = options.delete(:geometry)
+      end
+      if options[:name].nil? and create_name
         hash = 0
-        for key in [:geometry, :crop]
+        for key in [:size, :crop]
           hash = hash ^ options[key].hash if options[key]
         end
         options[:name] = hash.abs.to_s(36)
       end
       options
     end
+
   end
 end

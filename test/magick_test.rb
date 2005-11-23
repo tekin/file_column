@@ -169,3 +169,46 @@ class RMagickCroppingTest < AbstractRMagickTest
   end
     
 end
+
+class UrlForImageColumnTest < AbstractRMagickTest
+  include FileColumnHelper
+
+  def setup
+    Entry.file_column :image, :magick => {
+      :versions => {:thumb => {:size => "50x50", :name => "thumb" } }
+    }
+    @request = RequestMock.new
+  end
+    
+  def test_should_use_version_on_symbol_option
+    e = Entry.new(:image => upload("skanthak.png"))
+    
+    url = url_for_image_column(e, "image", :thumb)
+    assert_match %r{^/entry/image/tmp/.+/thumb/skanthak.png$}, url
+  end
+
+  def test_should_use_string_as_size
+    e = Entry.new(:image => upload("skanthak.png"))
+
+    url = url_for_image_column(e, "image", "50x50")
+    
+    assert_match %r{^/entry/image/tmp/.+/.+/skanthak.png$}, url
+    
+    url =~ /\/([^\/]+)\/skanthak.png$/
+    dirname = $1
+
+    assert_max_image_size read_image(e.image(dirname)), 50
+  end
+
+  def test_should_accept_version_hash
+    e = Entry.new(:image => upload("skanthak.png"))
+
+    url = url_for_image_column(e, "image", :size => "50x50", :crop => "1:1", :name => "small")
+
+    assert_match %r{^/entry/image/tmp/.+/small/skanthak.png$}, url
+
+    img = read_image(e.image("small"))
+    assert_equal 50, img.rows
+    assert_equal 50, img.columns
+  end
+end

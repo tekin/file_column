@@ -22,6 +22,12 @@ class ActiveRecord::Base
 end
 
 
+class RequestMock
+  def relative_url_root
+    ""
+  end
+end
+
 class Test::Unit::TestCase
   private
   

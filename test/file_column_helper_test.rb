@@ -1,12 +1,6 @@
 require 'abstract_unit'
 require 'fixtures/entry'
 
-class RequestMock
-  def relative_url_root
-    ""
-  end
-end
-
 class UrlForFileColumnTest < Test::Unit::TestCase
   include FileColumnHelper
 
@@ -50,3 +44,4 @@ class UrlForFileColumnTest < Test::Unit::TestCase
     assert_nil url_for_file_column(e, "image")
   end
 end
+
