@@ -2,7 +2,4 @@
 * support setting of permissions
 * validation methods for file format/size
 * delete stale files from tmp directories
-* move image scaling into views
-* refactor to store options in class attributes, so that we
-  can use procs again
-
+* integrate :store_dir callback patch
