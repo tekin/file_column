@@ -1,7 +1,8 @@
 require 'test/unit'
 require 'rubygems'
-require_gem 'activesupport'
-require_gem 'activerecord'
+require 'active_support'
+require 'active_record'
+require 'action_view'
 require 'connection'
 require 'stringio'
 

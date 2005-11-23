@@ -30,7 +30,7 @@ module FileColumnHelper
   # Creates an URL where an uploaded file can be accessed. When called for an Entry object with
   # id 42 (stored in <tt>@entry</tt>) like this
   #
-  #   <%= url_for_file_column("entry", "image")
+  #   <%= url_for_file_column(@entry, "image")
   #
   # the following URL will be produced, assuming the file "test.png" has been stored in
   # the "image"-column of an Entry object stored in <tt>@entry</tt>:
@@ -57,10 +57,13 @@ module FileColumnHelper
   #   that is created according to the options in <tt>some_hash</tt>. This
   #   accepts exactly the same options as Magick's version feature.
   #
-  # Note that the object has to be stored in an instance variable. So if +object_name+ is
-  # "entry" your object has to be stored in <tt>@entry</tt>.
-  def url_for_file_column(object_name, method, options=nil)
-    object = instance_variable_get("@#{object_name.to_s}")
+  # Note that if you pass a string or a symbol as the +object+ parameter,
+  # the file_column will be looked up in instance variable named +object+.
+  def url_for_file_column(object, method, options=nil)
+    case object
+    when String, Symbol
+      object = instance_variable_get("@#{object.to_s}")
+    end
     subdir = nil
     if options and options[:version]
       subdir = object.send("#{method}_state").create_magick_version_if_needed(options[:version])

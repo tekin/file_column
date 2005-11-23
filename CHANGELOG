@@ -3,6 +3,9 @@
     * use subdirs for versions instead of fiddling with filename
     * implemented dynamic resizing of images from views
     * new "crop" feature [Sean Treadway]
+    * do not require model objects to be stored in instance variable in
+      url_for_file_column helper
+
 0.3.1
     * make object with file_columns serializable
     * use normal require for RMagick, so that it works with gem

@@ -1,8 +1,7 @@
 require 'abstract_unit'
-require_gem 'rmagick'
+require 'RMagick'
+require 'fixtures/entry'
 
-class Entry < ActiveRecord::Base
-end
 
 class AbstractRMagickTest < Test::Unit::TestCase
   def teardown

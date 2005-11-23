@@ -30,5 +30,6 @@ end
 
 task :test do
   sh "cd test; ruby file_column_test.rb"
+  sh "cd test; ruby file_column_helper_test.rb"
   sh "cd test; ruby magick_test.rb"
 end
