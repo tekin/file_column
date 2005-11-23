@@ -95,7 +95,8 @@ module FileColumn # :nodoc:
   #
   # You can control what to do by adding a <tt>:magick</tt> option
   # to your options hash. All operations are performed immediately
-  # after a new file is assigned to the file_column attribute.
+  # after a new file is assigned to the file_column attribute (i.e.,
+  # when a new file has been uploaded).
   #
   # To resize the uploaded image according to an imagemagick geometry
   # string, just use the <tt>:size</tt> option:
@@ -105,27 +106,30 @@ module FileColumn # :nodoc:
   # You can also create additional versions of your image, for example
   # thumb-nails, like this:
   #    file_column :image, :magick => {:versions => {
-  #         "thumb" => {:size => "50x50"},
-  #         "medium" => {:size => "640x480>"}
+  #         :thumb => {:size => "50x50"},
+  #         :medium => {:size => "640x480>"}
   #       }
   #
   # If you wish to crop your images with a size ratio before scaling
   # them according to your version geometry, you can use the :crop directive.
   #    file_column :image, :magick => {:versions => {
-  #         "square" => {:crop => "1:1", :size => "50x50"},
-  #         "screen" => {:crop => "4:3", :size => "640x480>"},
-  #         "widescreen" => {:crop => "16:9", :size => "640x360!"},
+  #         :square => {:crop => "1:1", :size => "50x50", :name => "thumb"},
+  #         :screen => {:crop => "4:3", :size => "640x480>"},
+  #         :widescreen => {:crop => "16:9", :size => "640x360!"},
   #       }
   #    }
   #
-  # These versions will be stored in separate sub-directories and cann
-  # be accessed via FileColumnHelper's +url_for_file_column+ method
-  # like this:
+  # These versions will be stored in separate sub-directories. The name
+  # of the sub-directory can be set via the <tt>:name</tt> option. If it is
+  # not set, a named based on a hash of the version's options is chosen.
+  #
+  # These versions can be accessed via FileColumnHelper's +url_for_image_column+
+  # method like this:
   #
   #    <%= url_for_file_column "entry", "image", :thumb %>
   #
   # <b>Note:</b> You'll need the
-  # RMagick extension installed as a gem in order to use file_column's
+  # RMagick extension being installed  in order to use file_column's
   # imagemagick integration.
   module Magick
 
