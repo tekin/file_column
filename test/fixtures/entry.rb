@@ -20,5 +20,8 @@ class Entry < ActiveRecord::Base
   def after_save_called?
     @after_save_called
   end
-  
+
+  def my_store_dir
+    File.expand_path(File.join(RAILS_ROOT, "public", "my_store_dir"))
+  end
 end

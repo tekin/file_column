@@ -5,7 +5,8 @@
     * new "crop" feature [Sean Treadway]
     * url_for_file_column helper: do not require model objects to be stored in
       instance variables
-      
+    * allow more fined-grained control over :store_dir via callback
+      methods [Gerret Apelt]
 
 0.3.1
     * make object with file_columns serializable

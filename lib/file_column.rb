@@ -20,9 +20,14 @@ module FileColumn # :nodoc:
   def self.init_options(defaults, model, attr)
     options = defaults.dup
     options[:store_dir] ||= File.join(options[:root_path], model, attr)
-    options[:tmp_base_dir] ||= File.join(options[:store_dir], "tmp")
+    unless options[:store_dir].is_a?(Symbol)
+      options[:tmp_base_dir] ||= File.join(options[:store_dir], "tmp")
+    end
     options[:base_url] ||= options[:web_root] + File.join(model, attr)
-    FileUtils.mkpath([ options[:store_dir], options[:tmp_base_dir] ])
+
+    [:store_dir, :tmp_base_dir].each do |dir_sym|
+      FileUtils.mkpath(options[dir_sym]) if options[dir_sym].is_a? String
+    end
 
     options
   end
@@ -95,11 +100,25 @@ module FileColumn # :nodoc:
     private
     
     def store_dir
-      options[:store_dir]
+      if options[:store_dir].is_a? Symbol
+        raise ArgumentError.new("'#{options[:store_dir]}' is not an instance method of class #{@instance.class.name}") unless @instance.respond_to?(options[:store_dir])
+
+        dir = @instance.send(options[:store_dir])
+        FileUtils.mkpath(dir) unless File.exists?(dir)
+        dir
+      else 
+        options[:store_dir]
+      end
     end
 
     def tmp_base_dir
-      options[:tmp_base_dir]
+      if options[:tmp_base_dir]
+        options[:tmp_base_dir] 
+      else
+        dir = File.join(store_dir, "tmp")
+        FileUtils.mkpath(dir) unless File.exists?(dir)
+        dir
+      end
     end
 
     def clone_as(klass)
@@ -307,7 +326,7 @@ module FileColumn # :nodoc:
   class PermanentUploadedFile < RealUploadedFile # :nodoc:
     def initialize(*args)
       super *args
-      @dir = File.join(store_dir,@instance.id.to_s)
+      @dir = File.join(store_dir, relative_path_prefix)
       @filename = @instance[@attr]
       @filename = nil if @filename.empty?
     end
@@ -464,6 +483,26 @@ module FileColumn # :nodoc:
   # 2. If the file utility couldn't determine the mime-type or the utility was not
   #    present, the content-type provided by the user's browser is used
   #    as a fallback.
+  #
+  # == Custom storage directories
+  #
+  # You can set the directory where file_column will store your files via
+  # the <tt>:store_dir</tt> option. If not set this defaults to
+  # "public/model/attribute" inside your app's root.
+  #
+  # Uploaded files for unsaved model objects will be stored in a temporary
+  # directory. By default this directory will be a "tmp" directory in
+  # your <tt>:store_dir</tt>. You can override this via the
+  # <tt>:tmp_base_dir</tt> option.
+  #
+  # If you need more fine-grained control over the storage directory, you
+  # can use the name of a callback-method as a symbol for the
+  # <tt>:store_dir</tt> option. This method has to be defined as an
+  # instance method in your model. It will be called without any arguments
+  # whenever the storage directory for an uploaded file is needed. It should
+  # should return an absolute path as a string. Files will still be stored in
+  # sub-directories named after the model's +id+ attribute or in a "tmp"
+  # sub-directory for unsaved models.
   module ClassMethods
 
 
@@ -613,7 +652,7 @@ module FileColumn # :nodoc:
       define_method "#{attr}_options" do
         my_options
       end
-      
+
       private after_save_method, after_destroy_method
 
       FileColumn::Magick::file_column(self, attr, my_options) if options[:magick]

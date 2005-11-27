@@ -21,6 +21,7 @@ class FileColumnTest < Test::Unit::TestCase
   def teardown
     FileUtils.rm_rf File.dirname(__FILE__)+"/public/entry/"
     FileUtils.rm_rf File.dirname(__FILE__)+"/public/movie/"
+    FileUtils.rm_rf File.dirname(__FILE__)+"/public/my_store_dir/"
   end
   
   def test_column_write_method
@@ -170,6 +171,33 @@ class FileColumnTest < Test::Unit::TestCase
     e.image_dir
     assert_equal File.join(e.id.to_s), 
     e.image_relative_dir
+  end
+
+  def test_store_dir_callback
+    Entry.file_column :image, {:store_dir => :my_store_dir}
+    e = Entry.new
+
+    e.image = uploaded_file(file_path("kerb.jpg"), "image/jpeg", "kerb.jpg")    
+    assert e.save
+    
+    assert_equal File.expand_path(File.join(RAILS_ROOT, "public", "my_store_dir", e.id)), e.image_dir   
+  end
+
+  def test_tmp_dir_with_store_dir_callback
+    Entry.file_column :image, {:store_dir => :my_store_dir}
+    e = Entry.new
+    e.image = upload("kerb.jpg")
+    
+    assert_equal File.expand_path(File.join(RAILS_ROOT, "public", "my_store_dir", "tmp")), File.expand_path(File.join(e.image_dir,".."))
+  end
+
+  def test_invalid_store_dir_callback
+    Entry.file_column :image, {:store_dir => :my_store_dir_doesnt_exit}    
+    e = Entry.new
+    assert_raise(ArgumentError) {
+      e.image = uploaded_file(file_path("kerb.jpg"), "image/jpeg", "kerb.jpg")
+      e.save
+    }
   end
 
   def test_subdir_parameter
