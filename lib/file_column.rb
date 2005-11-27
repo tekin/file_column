@@ -41,6 +41,14 @@ module FileColumn # :nodoc:
 
 
     def assign(file)
+      if file.is_a? File
+        # this did not come in via a CGI request. However,
+        # assigning files directly may be useful, so we
+        # make just this file object similar enough to an uploaded
+        # file that we can handle it. 
+        file.extend FileColumn::FileCompat
+      end
+
       if file.nil?
         delete
       else

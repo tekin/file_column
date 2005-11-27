@@ -466,6 +466,17 @@ class FileColumnTest < Test::Unit::TestCase
     assert_kind_of FileColumn::PermanentUploadedFile, e.send(:image_state)
     assert e.after_save_called?
   end
+
+
+  def test_assign_standard_files
+    e = Entry.new
+    e.image = File.new(file_path('skanthak.png'))
+    
+    assert_equal 'skanthak.png', File.basename(e.image)
+    assert FileUtils.identical?(file_path('skanthak.png'), e.image)
+    
+    assert e.save
+  end
 end
 
 # Tests for moving temp dir to permanent dir
@@ -533,3 +544,4 @@ class FileColumnMoveTest < Test::Unit::TestCase
     assert File.directory?(e.image_dir+"/skanthak.png")
   end
 end
+

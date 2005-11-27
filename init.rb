@@ -3,6 +3,7 @@
 # add the file_column extensions to rails
 
 require 'file_column'
+require 'file_compat'
 require 'file_column_helper'
 
 ActiveRecord::Base.send(:include, FileColumn)

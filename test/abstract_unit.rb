@@ -10,7 +10,8 @@ RAILS_ROOT = File.dirname(__FILE__)
 
 $: << "../lib"
 
-require 'file_column.rb'
+require 'file_column'
+require 'file_compat'
 
 # do not use the file executable normally in our tests as
 # it may not be present on the machine we are running on
