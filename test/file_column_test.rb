@@ -79,7 +79,14 @@ class FileColumnTest < Test::Unit::TestCase
     assert_equal "local_filename.jpg", File.basename(e.image)
     assert_equal "local_filename.jpg", e["image"]
   end
-  
+
+  def test_no_extension_without_content_type
+    e = Entry.new
+    e.image = uploaded_file(file_path("kerb.jpg"), "something/unknown", "local_filename")
+    assert_equal "local_filename", File.basename(e.image)
+    assert_equal "local_filename", e["image"]
+  end
+
   def test_extension_unknown_type
     e = Entry.new
     e.image = uploaded_file(file_path("kerb.jpg"), "not/known", "local_filename")

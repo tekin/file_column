@@ -43,5 +43,12 @@ class UrlForFileColumnTest < Test::Unit::TestCase
     e = Entry.new
     assert_nil url_for_file_column(e, "image")
   end
+
+  def test_url_for_file_column_without_extension
+    e = Entry.new
+    e.image = uploaded_file(file_path("kerb.jpg"), "something/unknown", "local_filename")
+    assert e.save
+    assert_equal "/entry/image/#{e.id}/local_filename", url_for_file_column(e, "image")
+  end
 end
 

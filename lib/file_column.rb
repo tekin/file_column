@@ -168,11 +168,19 @@ module FileColumn # :nodoc:
 
   class RealUploadedFile < BaseUploadedFile # :nodoc:
     def absolute_path(subdir=nil)
-      File.expand_path(File.join(@dir, subdir, @filename))
+      if subdir
+        File.expand_path(File.join(@dir, subdir, @filename))
+      else
+        File.expand_path(File.join(@dir, @filename))
+      end
     end
 
     def relative_path(subdir=nil)
-      File.join(relative_path_prefix, subdir, @filename)
+      if subdir
+        File.join(relative_path_prefix, subdir, @filename)
+      else
+        File.join(relative_path_prefix, @filename)
+      end
     end
 
     private
