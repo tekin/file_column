@@ -72,8 +72,9 @@ module FileColumnHelper
   #   that is created according to the options in <tt>some_hash</tt>. This
   #   accepts exactly the same options as Magick's version feature.
   #
-  # The version produced by RMagick will be stored in a special sub-directories.
-  # The directory's name will be derived from the options you specify but if you want
+  # The version produced by RMagick will be stored in a special sub-directory.
+  # The directory's name will be derived from the options you specified
+  # (via a hash function) but if you want
   # to set it yourself, you can use the <tt>:name => name</tt> option.
   #
   # Examples:

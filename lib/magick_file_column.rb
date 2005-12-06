@@ -119,14 +119,16 @@ module FileColumn # :nodoc:
   #       }
   #    }
   #
-  # These versions will be stored in separate sub-directories. The name
-  # of the sub-directory can be set via the <tt>:name</tt> option. If it is
-  # not set, a named based on a hash of the version's options is chosen.
+  # These versions will be stored in separate sub-directories, named like the
+  # symbol you used to identify the version. So in the previous example, the
+  # image versions will be stored in "thumb", "screen" and "widescreen"
+  # directories, resp. 
+  # A name different from the symbol can be set via the <tt>:name</tt> option.
   #
   # These versions can be accessed via FileColumnHelper's +url_for_image_column+
   # method like this:
   #
-  #    <%= url_for_file_column "entry", "image", :thumb %>
+  #    <%= url_for_image_column "entry", "image", :thumb %>
   #
   # <b>Note:</b> You'll need the
   # RMagick extension being installed  in order to use file_column's
@@ -138,7 +140,7 @@ module FileColumn # :nodoc:
       options[:magick] = process_options(options[:magick],false) if options[:magick]
       if options[:magick][:versions]
         options[:magick][:versions].each_pair do |name, value|
-          options[:magick][:versions][name] = process_options(value)
+          options[:magick][:versions][name] = process_options(value, name.to_s)
         end
       end
       state_method = "#{attr}_state".to_sym
@@ -168,11 +170,15 @@ module FileColumn # :nodoc:
         options[:size] = options.delete(:geometry)
       end
       if options[:name].nil? and create_name
-        hash = 0
-        for key in [:size, :crop]
-          hash = hash ^ options[key].hash if options[key]
+        if create_name == true
+          hash = 0
+          for key in [:size, :crop]
+            hash = hash ^ options[key].hash if options[key]
+          end
+          options[:name] = hash.abs.to_s(36)
+        else
+          options[:name] = create_name
         end
-        options[:name] = hash.abs.to_s(36)
       end
       options
     end

@@ -87,17 +87,13 @@ class RMagickVersionsTest < AbstractRMagickTest
   def setup
     Entry.file_column :image, :magick => {:geometry => "200x200",
       :versions => {
-        :thumb => {:geometry => "50x50", :name => "thumb" },
-        :medium => {:geometry => "100x100"},
-        :large => {:geometry => "150x150", :lazy => true, :name => "large" }
+        :thumb => "50x50",
+        :medium => {:geometry => "100x100", :name => "100_100"},
+        :large => {:geometry => "150x150", :lazy => true}
       }
     }
   end
 
-  def test_should_create_safe_auto_id
-    e = Entry.new
-    assert_match /^[a-zA-Z0-9]+$/, e.image_options[:magick][:versions][:medium][:name]
-  end
 
   def test_should_create_thumb
     e = Entry.new("image" => upload("skanthak.png"))
@@ -110,7 +106,7 @@ class RMagickVersionsTest < AbstractRMagickTest
   def test_version_name_can_be_different_from_key
     e = Entry.new("image" => upload("skanthak.png"))
     
-    assert File.exists?(e.image(e.image_options[:magick][:versions][:medium][:name]))
+    assert File.exists?(e.image("100_100"))
     assert !File.exists?(e.image("medium"))
   end
 
@@ -148,13 +144,21 @@ class RMagickVersionsTest < AbstractRMagickTest
 
     assert_max_image_size read_image(e.image(name)), 32
   end
+
+  def test_should_create_safe_auto_id
+    e = Entry.new("image" => upload("skanthak.png"))
+
+    name = e.send(:image_state).create_magick_version_if_needed("32x32")
+
+    assert_match /^[a-zA-Z0-9]+$/, name
+  end
 end
 
 class RMagickCroppingTest < AbstractRMagickTest
   def setup
     Entry.file_column :image, :magick => {:geometry => "200x200",
       :versions => {
-        :thumb => {:crop => "1:1", :geometry => "50x50", :name => "thumb" }
+        :thumb => {:crop => "1:1", :geometry => "50x50"}
       }
     }
   end
@@ -175,7 +179,7 @@ class UrlForImageColumnTest < AbstractRMagickTest
 
   def setup
     Entry.file_column :image, :magick => {
-      :versions => {:thumb => {:size => "50x50", :name => "thumb" } }
+      :versions => {:thumb => "50x50"} 
     }
     @request = RequestMock.new
   end
@@ -196,7 +200,7 @@ class UrlForImageColumnTest < AbstractRMagickTest
     
     url =~ /\/([^\/]+)\/skanthak.png$/
     dirname = $1
-
+    
     assert_max_image_size read_image(e.image(dirname)), 50
   end
 
