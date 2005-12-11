@@ -26,7 +26,9 @@ module FileColumn # :nodoc:
     options[:base_url] ||= options[:web_root] + File.join(model, attr)
 
     [:store_dir, :tmp_base_dir].each do |dir_sym|
-      FileUtils.mkpath(options[dir_sym]) if options[dir_sym].is_a? String
+      if options[dir_sym].is_a?(String) and !File.exists?(options[dir_sym])
+        FileUtils.mkpath(options[dir_sym])
+      end
     end
 
     options
@@ -111,7 +113,7 @@ module FileColumn # :nodoc:
       if options[:store_dir].is_a? Symbol
         raise ArgumentError.new("'#{options[:store_dir]}' is not an instance method of class #{@instance.class.name}") unless @instance.respond_to?(options[:store_dir])
 
-        dir = @instance.send(options[:store_dir])
+        dir = File.join(options[:root_path], @instance.send(options[:store_dir]))
         FileUtils.mkpath(dir) unless File.exists?(dir)
         dir
       else 
@@ -433,7 +435,7 @@ module FileColumn # :nodoc:
   #
   #   entry['image']    # e.g."test.png"
   #
-  # == Storage of uploaded file
+  # == Storage of uploaded files
   #
   # For a model class +Entry+ and a column +image+, all files will be stored under
   # "public/entry/image". A sub-directory named after the primary key of the object will
@@ -471,7 +473,7 @@ module FileColumn # :nodoc:
   # parameter if they have the same filename.
   #
   # Suppose your uploaded file is named "vancouver.jpg" and you want to create a
-  # thumb-nail and store it in the "thumb" directory. If you cal
+  # thumb-nail and store it in the "thumb" directory. If you call
   # <tt>image("thumb")</tt>, you
   # will receive an absolute path for the file "thumb/vancouver.jpg" in the same
   # directory "vancouver.jpg" is stored. Look at the documentation of FileColumn::Magick
@@ -500,27 +502,37 @@ module FileColumn # :nodoc:
   #    present, the content-type provided by the user's browser is used
   #    as a fallback.
   #
-  # == Custom storage directories
+  # == Custom Storage Directories
   #
-  # You can set the directory where file_column will store your files via
-  # the <tt>:store_dir</tt> option. If not set this defaults to
-  # "public/model/attribute" inside your app's root.
+  # FileColumn's storage location is determined in the following way. All
+  # files are saved below the so-called "root_path" directory, which defaults to
+  # "RAILS_ROOT/public". For every file_column, you can set a separte "store_dir"
+  # option. It defaults to "model_name/attribute_name".
+  # 
+  # Files will always be stored in sub-directories of the store_dir path. The
+  # subdirectory is named after the instance's +id+ attribute for a saved model,
+  # or "tmp/<randomkey>" for unsaved models.
   #
-  # Uploaded files for unsaved model objects will be stored in a temporary
-  # directory. By default this directory will be a "tmp" directory in
-  # your <tt>:store_dir</tt>. You can override this via the
-  # <tt>:tmp_base_dir</tt> option.
+  # You can specify a custom root_path by setting the <tt>:root_path</tt> option.
+  # 
+  # You can specify a custom storage_dir by setting the <tt>:storage_dir</tt> option.
+  #
+  # For setting a static storage_dir that doesn't change with respect to a particular
+  # instance, you assign <tt>:storage_dir</tt> a String representing a directory
+  # as an absolute path.
   #
   # If you need more fine-grained control over the storage directory, you
   # can use the name of a callback-method as a symbol for the
   # <tt>:store_dir</tt> option. This method has to be defined as an
   # instance method in your model. It will be called without any arguments
-  # whenever the storage directory for an uploaded file is needed. It should
-  # should return an absolute path as a string. Files will still be stored in
-  # sub-directories named after the model's +id+ attribute or in a "tmp"
-  # sub-directory for unsaved models.
+  # whenever the storage directory for an uploaded file is needed. It should return
+  # a String representing a directory relativeo to root_path.
+  #
+  # Uploaded files for unsaved models objects will be stored in a temporary
+  # directory. By default this directory will be a "tmp" directory in
+  # your <tt>:store_dir</tt>. You can override this via the
+  # <tt>:tmp_base_dir</tt> option.
   module ClassMethods
-
 
     # default mapping of mime-types to file extensions. FileColumn will try to
     # rename a file to the correct extension if it detects a known mime-type
@@ -691,13 +703,6 @@ module FileColumn # :nodoc:
     filename
   end
   
-  def self.remove_file_with_dir(path)
-    return unless File.file?(path)
-    FileUtils.rm_f path
-    dir = File.dirname(path)
-    Dir.rmdir(dir) if File.exists?(dir)
-  end
-
 end
 
 

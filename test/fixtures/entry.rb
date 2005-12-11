@@ -22,6 +22,7 @@ class Entry < ActiveRecord::Base
   end
 
   def my_store_dir
-    File.expand_path(File.join(RAILS_ROOT, "public", "my_store_dir"))
+    # not really dynamic but at least it could be...
+    "my_store_dir"
   end
 end
