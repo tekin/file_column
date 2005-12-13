@@ -81,6 +81,14 @@ class RMagickSimpleTest < AbstractRMagickTest
     }
     assert File.exists?(e.image)
   end
+
+  def test_imagemagick_still_usable
+    e = Entry.new
+    assert_nothing_raised {
+      img = e.load_image_with_rmagick(file_path("skanthak.png"))
+      assert img.kind_of?(Magick::Image)
+    }
+  end
 end
 
 class RMagickVersionsTest < AbstractRMagickTest

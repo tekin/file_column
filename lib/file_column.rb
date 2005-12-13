@@ -683,7 +683,7 @@ module FileColumn # :nodoc:
 
       private after_save_method, after_destroy_method
 
-      FileColumn::Magick::file_column(self, attr, my_options) if options[:magick]
+      FileColumn::MagickExtension::file_column(self, attr, my_options) if options[:magick]
     end
     
   end

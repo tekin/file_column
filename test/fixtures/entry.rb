@@ -25,4 +25,8 @@ class Entry < ActiveRecord::Base
     # not really dynamic but at least it could be...
     "my_store_dir"
   end
+
+  def load_image_with_rmagick(path)
+    Magick::Image::read(path).first
+  end
 end

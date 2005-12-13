@@ -2,4 +2,4 @@
 * support setting of permissions
 * validation methods for file format/size
 * delete stale files from tmp directories
-* integrate :store_dir callback patch
+

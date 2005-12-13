@@ -41,7 +41,7 @@ module FileColumn # :nodoc:
       if version.is_a?(Symbol)
         version_options = options[:magick][:versions][version]
       else
-        version_options = Magick::process_options(version)
+        version_options = MagickExtension::process_options(version)
       end
 
       unless File.exists?(absolute_path(version_options[:name]))
@@ -133,7 +133,7 @@ module FileColumn # :nodoc:
   # <b>Note:</b> You'll need the
   # RMagick extension being installed  in order to use file_column's
   # imagemagick integration.
-  module Magick
+  module MagickExtension
 
     def self.file_column(klass, attr, options) # :nodoc:
       require 'RMagick'
