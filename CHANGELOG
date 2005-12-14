@@ -8,6 +8,7 @@
     * allow more fined-grained control over :store_dir via callback
       methods [Gerret Apelt]
     * allow assignment of regular file objects
+    * validation of file format and file size [Kyle Maxwell]
 
 0.3.1
     * make object with file_columns serializable

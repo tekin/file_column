@@ -15,7 +15,8 @@ class FileColumnTest < Test::Unit::TestCase
     Entry.file_column :image
     Entry.file_column :file
     Movie.file_column :movie
-    
+
+    clear_validations
   end
   
   def teardown
@@ -484,6 +485,33 @@ class FileColumnTest < Test::Unit::TestCase
     
     assert e.save
   end
+
+
+  def test_validates_filesize
+    Entry.validates_filesize_of :image, :in => 50.kilobytes..100.kilobytes
+
+    e = Entry.new(:image => upload("kerb.jpg"))
+    assert e.save
+
+    e.image = upload("skanthak.png")
+    assert !e.save
+    assert e.errors.invalid?("image")
+  end
+
+  def test_validates_format_simple
+    e = Entry.new(:image => upload("skanthak.png"))
+    assert e.save
+    
+    Entry.validates_format_of :image, :in => ["jpg"]
+
+    e.image = upload("kerb.jpg")
+    assert e.save
+
+    e.image = upload("mysql.sql")
+    assert !e.save
+    assert e.errors.invalid?("image")
+    
+  end
 end
 
 # Tests for moving temp dir to permanent dir
@@ -550,5 +578,6 @@ class FileColumnMoveTest < Test::Unit::TestCase
     assert !File.file?(e.image_dir+"/skanthak.png")
     assert File.directory?(e.image_dir+"/skanthak.png")
   end
+
 end
 

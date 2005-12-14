@@ -12,6 +12,7 @@ $: << "../lib"
 
 require 'file_column'
 require 'file_compat'
+require 'validations'
 
 # do not use the file executable normally in our tests as
 # it may not be present on the machine we are running on
@@ -20,6 +21,7 @@ FileColumn::ClassMethods::DEFAULT_OPTIONS =
 
 class ActiveRecord::Base
     include FileColumn
+    include FileColumn::Validations
 end
 
 
@@ -61,6 +63,13 @@ class Test::Unit::TestCase
       end
     end
     uploaded_file(file_path(basename), content_type, basename)
+  end
+  
+  def clear_validations
+    [:validate, :validate_on_create, :validate_on_update].each do |attr|
+        Entry.write_inheritable_attribute attr, []
+        Movie.write_inheritable_attribute attr, []
+      end
   end
 
   def file_path(filename)
