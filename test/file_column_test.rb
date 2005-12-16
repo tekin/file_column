@@ -498,11 +498,11 @@ class FileColumnTest < Test::Unit::TestCase
     assert e.errors.invalid?("image")
   end
 
-  def test_validates_format_simple
+  def test_validates_file_format_simple
     e = Entry.new(:image => upload("skanthak.png"))
     assert e.save
     
-    Entry.validates_format_of :image, :in => ["jpg"]
+    Entry.validates_file_format_of :image, :in => ["jpg"]
 
     e.image = upload("kerb.jpg")
     assert e.save

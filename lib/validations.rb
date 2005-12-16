@@ -15,9 +15,9 @@ module FileColumn
       # :in => list of extensions or mime types
       #
       # Examples:
-      # validates_format_of :field, :in => ["gif", "png", "jpg"]
-      # validates_format_of :field, :in => ["image/jpeg"]
-      def validates_format_of(*attrs)
+      # validates_file_format_of :field, :in => ["gif", "png", "jpg"]
+      # validates_file_format_of :field, :in => ["image/jpeg"]
+      def validates_file_format_of(*attrs)
       
         options = attrs.pop if attrs.last.is_a?Hash
         raise ArgumentError, "Please include the :in option." if !options || !options[:in]
