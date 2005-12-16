@@ -57,6 +57,39 @@ module FileColumn
         end
       
       end 
+
+      IMAGE_SIZE_REGEXP = /^(\d+)x(\d+)$/
+
+      # This validates the image size of one or more file_columns.  The list of file columns should be followed with an options hash. The validation will pass
+      # if both image dimensions (rows and columns) are at least as big as
+      # given in the <tt>:min</tt> option.
+      #
+      # Valid options:
+      # :min => minimum image dimension string, in the format NNxNN (columns x rows).
+      #
+      # Example:
+      # validates_image_size :field, :min => "1200x1800"
+      def validates_image_size(*attrs)      
+        options = attrs.pop if attrs.last.is_a?Hash
+        raise ArgumentError, "Please include a :min option." if !options || !options[:min]
+        minimums = options[:min].scan(IMAGE_SIZE_REGEXP).first.collect{|n| n.to_i} rescue []
+        raise ArgumentError, "Invalid value for option :min (should be 'XXxYY')" unless minimums.size == 2
+
+        require 'RMagick'
+
+        validates_each(attrs, options) do |record, attr, value|
+          unless value.blank?
+            begin
+              img = ::Magick::Image::read(value).first
+              record.errors.add('image', "is too small, must be at least #{minimums[0]}x#{minimums[1]}") if ( img.rows < minimums[1] || img.columns < minimums[0] )
+            rescue ::Magick::ImageMagickError
+              record.errors.add('image', "invalid image")
+            end
+            img = nil
+            GC.start
+          end
+        end
+      end
     end
   end
 end

@@ -512,6 +512,17 @@ class FileColumnTest < Test::Unit::TestCase
     assert e.errors.invalid?("image")
     
   end
+
+  def test_validates_image_size
+    Entry.validates_image_size :image, :min => "640x480"
+    
+    e = Entry.new(:image => upload("kerb.jpg"))
+    assert e.save
+
+    e = Entry.new(:image => upload("skanthak.png"))
+    assert !e.save
+    assert e.errors.invalid?("image")
+  end
 end
 
 # Tests for moving temp dir to permanent dir

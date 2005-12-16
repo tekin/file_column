@@ -9,6 +9,7 @@
       methods [Gerret Apelt]
     * allow assignment of regular file objects
     * validation of file format and file size [Kyle Maxwell]
+    * validation of image dimensions [Lee O'Mara]
 
 0.3.1
     * make object with file_columns serializable
