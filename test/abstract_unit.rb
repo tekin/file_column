@@ -3,7 +3,7 @@ require 'rubygems'
 require 'active_support'
 require 'active_record'
 require 'action_view'
-require 'connection'
+require File.dirname(__FILE__) + '/connection'
 require 'stringio'
 
 RAILS_ROOT = File.dirname(__FILE__)

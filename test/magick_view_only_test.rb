@@ -1,5 +1,5 @@
-require 'abstract_unit'
-require 'fixtures/entry'
+require File.dirname(__FILE__) + '/abstract_unit'
+require File.dirname(__FILE__) + '/fixtures/entry'
 
 class RMagickViewOnlyTest < Test::Unit::TestCase
   include FileColumnHelper
