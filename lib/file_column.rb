@@ -222,9 +222,15 @@ module FileColumn # :nodoc:
       # If it was a Tempfile object, the temporary file will be
       # cleaned up automatically, so we do not have to care for this
       if file.respond_to?(:local_path) and file.local_path and File.exists?(file.local_path)
-        FileUtils.copy_file(file.local_path, local_file_path)
+        File.open(file.local_path, "rb") do |f_in|
+          File.open(local_file_path, "wb", options[:permissions]) do |f_out|
+            FileUtils.copy_stream(f_in, f_out)
+          end
+        end
       elsif file.respond_to?(:read)
-        File.open(local_file_path, "wb") { |f| f.write(file.read) }
+        File.open(local_file_path, "wb", options[:permissions]) do |f| 
+          f.write(file.read)
+        end
       else
         raise ArgumentError.new("Do not know how to handle #{file.inspect}")
       end
@@ -587,6 +593,7 @@ module FileColumn # :nodoc:
       :mime_extensions => MIME_EXTENSIONS,
       :extensions => EXTENSIONS,
       :fix_file_extensions => true,
+      :permissions => 0644,
 
       # path to the unix "file" executbale for
       # guessing the content-type of files

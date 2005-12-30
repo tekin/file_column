@@ -523,6 +523,23 @@ class FileColumnTest < Test::Unit::TestCase
     assert !e.save
     assert e.errors.invalid?("image")
   end
+
+  def do_permission_test(uploaded_file)
+    Entry.file_column :image, :permissions => 0641
+    
+    e = Entry.new(:image => uploaded_file)
+    assert e.save
+
+    assert_equal 0641, (File.stat(e.image).mode & 0777)
+  end
+
+  def test_permissions_with_small_file
+    do_permission_test upload("skanthak.png", :guess, :stringio)
+  end
+
+  def test_permission_with_big_file
+    do_permission_test upload("kerb.jpg")
+  end
 end
 
 # Tests for moving temp dir to permanent dir

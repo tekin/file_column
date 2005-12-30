@@ -82,7 +82,7 @@ module FileColumn # :nodoc:
           end
         end
       ensure
-        img.write dest_path
+        File.open(dest_path, "wb", options[:permissions]) {|f| img.write f}
       end
     end
   end

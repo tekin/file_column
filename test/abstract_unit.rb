@@ -54,7 +54,7 @@ class Test::Unit::TestCase
     return t
   end
 
-  def upload(basename, content_type=:guess)
+  def upload(basename, content_type=:guess, file_type=:tempfile)
     if content_type == :guess
       case basename
         when /\.jpg$/ then content_type = "image/jpeg"
@@ -62,7 +62,7 @@ class Test::Unit::TestCase
         else content_type = nil
       end
     end
-    uploaded_file(file_path(basename), content_type, basename)
+    uploaded_file(file_path(basename), content_type, basename, file_type)
   end
   
   def clear_validations

@@ -224,3 +224,28 @@ class UrlForImageColumnTest < AbstractRMagickTest
     assert_equal 50, img.columns
   end
 end
+
+class RMagickPermissionsTest < AbstractRMagickTest
+  def setup
+    Entry.file_column :image, :magick => {:geometry => "200x200",
+      :versions => {
+        :thumb => {:crop => "1:1", :geometry => "50x50"}
+      }
+    }, :permissions => 0641
+  end
+  
+  def check_permissions(e)
+    assert_equal 0641, (File.stat(e.image).mode & 0777)
+    assert_equal 0641, (File.stat(e.image("thumb")).mode & 0777)
+  end
+
+  def test_permissions_with_rmagick
+    e = Entry.new(:image => upload("skanthak.png"))
+    
+    check_permissions e
+
+    assert e.save
+
+    check_permissions e
+  end
+end
