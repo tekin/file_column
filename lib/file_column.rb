@@ -413,10 +413,11 @@ module FileColumn # :nodoc:
   #
   # Now, by default, an uploaded file "test.png" for an entry object with primary key 42 will
   # be stored in in "public/entry/image/42/test.png". The filename "test.png" will be stored
-  # in the record's +image+ column.
+  # in the record's "image" column. The "entries" table should have a +VARCHAR+ column
+  # named "image".
   #
-  # The methods of this module are automatically included into ActiveRecord::Base as class
-  # methods, so that you can use them in your models.
+  # The methods of this module are automatically included into <tt>ActiveRecord::Base</tt>
+  # as class methods, so that you can use them in your models.
   #
   # == Generated Methods
   #
@@ -434,7 +435,8 @@ module FileColumn # :nodoc:
   #   this file column's base directory
   #   as a string or nil if no file has been uploaded. This would be "42/test.png" in the example.
   # * <tt>Entry#image_just_uploaded?</tt>: Returns true if a new file has been uploaded to this instance.
-  #   You can use this in <tt>before_validation</tt> to resize images on newly uploaded files, for example.
+  #   You can use this in your code to perform certain actions (e. g., validation,
+  #   custom post-processing) only on newly uploaded files.
   #
   # You can access the raw value of the "image" column (which will contain the filename) via the
   # <tt>ActiveRecord::Base#attributes</tt> or <tt>ActiveRecord::Base#[]</tt> methods like this:
@@ -452,6 +454,12 @@ module FileColumn # :nodoc:
   #
   # Files will be moved to this location in an +after_save+ callback. They will be stored in
   # a temporary location previously as explained in the next section.
+  #
+  # By default, files will be created with unix permissions of <tt>0644</tt> (i. e., owner has
+  # read/write access, group and others only have read access). You can customize
+  # this by passing the desired mode as a <tt>:permissions</tt> options. Note, that this
+  # mode is still affected by the process' umask, i. e., all permissions set in the umask
+  # will be removed from the permissions of newly written files by the OS.
   #
   # == Handling of form redisplay
   #
