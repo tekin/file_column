@@ -126,11 +126,26 @@ class FileColumnTest < Test::Unit::TestCase
     if File.executable?(FILE_UTILITY)
       e = Entry.new
       file = FileColumn::TempUploadedFile.new(e, "image")
-      file.instance_variable_set :@local_file_path, file_path("kerb.jpg")
+      file.instance_variable_set :@dir, File.dirname(file_path("kerb.jpg"))
+      file.instance_variable_set :@filename, File.basename(file_path("kerb.jpg"))
       
       assert_equal "image/jpeg", file.get_content_type
     else
       puts "Warning: Skipping test_get_content_type_with_file test as '#{options[:file_exec]}' does not exist"
+    end
+  end
+
+  def test_fix_extension_with_file
+    Entry.file_column :image, :file_exec => FILE_UTILITY
+
+    # run this test only if the machine we are running on
+    # has the file utility installed
+    if File.executable?(FILE_UTILITY)
+      e = Entry.new(:image => uploaded_file(file_path("skanthak.png"), "", "skanthak.jpg"))
+      
+      assert_equal "skanthak.png", File.basename(e.image)
+    else
+      puts "Warning: Skipping test_fix_extension_with_file test as '#{options[:file_exec]}' does not exist"
     end
   end
 

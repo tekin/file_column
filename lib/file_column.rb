@@ -327,7 +327,7 @@ module FileColumn # :nodoc:
     def get_content_type(fallback=nil)
       if options[:file_exec]
         begin
-          content_type = `#{options[:file_exec]} -bi "#{@local_file_path}"`.chomp
+          content_type = `#{options[:file_exec]} -bi "#{File.join(@dir,@filename)}"`.chomp
           content_type = fallback unless $?.success?
           content_type.gsub!(/;.+$/,"") if content_type
           content_type
