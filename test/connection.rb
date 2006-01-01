@@ -13,3 +13,5 @@ ActiveRecord::Base.establish_connection(
   :database => db,
   :socket => "/var/run/mysqld/mysqld.sock"
 )
+
+load File.dirname(__FILE__) + "/fixtures/schema.rb"
