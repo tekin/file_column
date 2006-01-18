@@ -287,6 +287,7 @@ module FileColumn # :nodoc:
 
     def delete
       delete_files
+      @instance[@attr] = ""
       clone_as NoUploadedFile
     end
 
@@ -375,7 +376,7 @@ module FileColumn # :nodoc:
 
     def delete
       file = clone_as NoUploadedFile
-      @instance[@attr] = nil
+      @instance[@attr] = ""
       file.on_save { delete_files }
       file
     end

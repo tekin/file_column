@@ -358,7 +358,7 @@ class FileColumnTest < Test::Unit::TestCase
     assert_nil e.image
     assert !File.exists?(local_path)
     e.reload
-    assert_nil e["image"]
+    assert e["image"].blank?
     e = Entry.find(e.id)
     assert_nil e.image
   end
@@ -368,6 +368,7 @@ class FileColumnTest < Test::Unit::TestCase
     local_path = e.image
     e.image = nil
     assert_nil e.image
+    assert e["image"].blank?
     assert !File.exists?(local_path)
   end
   
@@ -377,7 +378,18 @@ class FileColumnTest < Test::Unit::TestCase
     assert e.save
     assert_nil e.image
   end
-  
+
+  def test_delete_image_on_non_null_column
+    e = Entry.new("file" => upload("skanthak.png"))
+    assert e.save
+
+    local_path = e.file
+    assert File.exists?(local_path)
+    e.file = nil
+    assert e.save
+    assert !File.exists?(local_path)
+  end
+
   def test_ie_filename
     e = Entry.new("image" => uploaded_file(file_path("kerb.jpg"), "image/jpeg", 'c:\images\kerb.jpg'))
     assert e.image_relative_path =~ /^tmp\/[\d\.]+\/kerb\.jpg$/, "relative path '#{e.image_relative_path}' was not as expected"
