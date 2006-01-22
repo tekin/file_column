@@ -551,13 +551,13 @@ class FileColumnTest < Test::Unit::TestCase
     assert e.errors.invalid?("image")
   end
 
-  def do_permission_test(uploaded_file)
-    Entry.file_column :image, :permissions => 0641
+  def do_permission_test(uploaded_file, permissions=0641)
+    Entry.file_column :image, :permissions => permissions
     
     e = Entry.new(:image => uploaded_file)
     assert e.save
 
-    assert_equal 0641, (File.stat(e.image).mode & 0777)
+    assert_equal permissions, (File.stat(e.image).mode & 0777)
   end
 
   def test_permissions_with_small_file
@@ -566,6 +566,11 @@ class FileColumnTest < Test::Unit::TestCase
 
   def test_permission_with_big_file
     do_permission_test upload("kerb.jpg")
+  end
+
+  def test_permission_that_overrides_umask
+    do_permission_test upload("skanthak.png", :guess, :stringio), 0666
+    do_permission_test upload("kerb.jpg"), 0666
   end
 end
 

@@ -222,19 +222,14 @@ module FileColumn # :nodoc:
       # If it was a Tempfile object, the temporary file will be
       # cleaned up automatically, so we do not have to care for this
       if file.respond_to?(:local_path) and file.local_path and File.exists?(file.local_path)
-        File.open(file.local_path, "rb") do |f_in|
-          File.open(local_file_path, "wb", options[:permissions]) do |f_out|
-            FileUtils.copy_stream(f_in, f_out)
-          end
-        end
+        FileUtils.copy_file(file.local_path, local_file_path)
       elsif file.respond_to?(:read)
-        File.open(local_file_path, "wb", options[:permissions]) do |f| 
-          f.write(file.read)
-        end
+        File.open(local_file_path, "wb") { |f| f.write(file.read) }
       else
         raise ArgumentError.new("Do not know how to handle #{file.inspect}")
       end
-
+      File.chmod(options[:permissions], local_file_path)
+      
       if options[:fix_file_extensions]
         # try to determine correct file extension and fix
         # if necessary
@@ -458,9 +453,9 @@ module FileColumn # :nodoc:
   #
   # By default, files will be created with unix permissions of <tt>0644</tt> (i. e., owner has
   # read/write access, group and others only have read access). You can customize
-  # this by passing the desired mode as a <tt>:permissions</tt> options. Note, that this
-  # mode is still affected by the process' umask, i. e., all permissions set in the umask
-  # will be removed from the permissions of newly written files by the OS.
+  # this by passing the desired mode as a <tt>:permissions</tt> options. The value
+  # you give here is passed directly to <tt>File::chmod</tt>, so on Unix you should
+  # give some octal value like 0644, for example.
   #
   # == Handling of form redisplay
   #
