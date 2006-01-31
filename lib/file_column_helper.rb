@@ -40,17 +40,44 @@ module FileColumnHelper
   # This will produce a valid URL even for temporary uploaded files, e.g. files where the object
   # they are belonging to has not been saved in the database yet.
   #
+  # The URL produces, although starting with a slash, will be relative
+  # to your app's root. If you pass it to one rails' +image_tag+
+  # helper, rails will properly convert it to an absolute
+  # URL. However, this will not be the case, if you create a link with
+  # the +link_to+ helper. In this case, you can pass <tt>:absolute =>
+  # true</tt> to +options+, which will make sure, the generated URL is
+  # absolute on your server.  Examples:
+  #
+  #    <%= image_tag url_for_file_column(@entry, "image") %>
+  #    <%= link_to "Download", url_for_file_column(@entry, "image", :absolute => true) %>
+  #
   # If there is currently no uploaded file stored in the object's column this method will
   # return +nil+.
-  def url_for_file_column(object, method, subdir=nil)
+  def url_for_file_column(object, method, options=nil)
     case object
     when String, Symbol
       object = instance_variable_get("@#{object.to_s}")
     end
+
+    # parse options
+    subdir = nil
+    absolute = false
+    if options
+      case options
+      when Hash
+        subdir = options[:subdir]
+        absolute = options[:absolute]
+      when String, Symbol
+        subdir = options
+      end
+    end
+    
     relative_path = object.send("#{method}_relative_path", subdir)
     return nil unless relative_path
+
     url = ""
-    url << @request.relative_url_root.to_s << "/"
+    url << request.relative_url_root.to_s if absolute
+    url << "/"
     url << object.send("#{method}_options")[:base_url] << "/"
     url << relative_path
   end
@@ -99,6 +126,10 @@ module FileColumnHelper
   # define it in a helper to stay with DRY. Another option is to define it in the model via
   # FileColumn::Magick's <tt>:versions</tt> feature and then refer to it via a symbol.
   #
+  # The URL produced by this method is relative to your application's root URL,
+  # although it will start with a slash.
+  # If you pass this URL to rails' +image_tag+ helper, it will be converted to an
+  # absolute URL automatically.
   # If there is currently no image uploaded, this method will return +nil+.
   def url_for_image_column(object, method, options=nil)
     case object

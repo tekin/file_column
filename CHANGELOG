@@ -15,6 +15,11 @@
       column is declared as NON NULL on some databases
     * don't expand absolute paths. This is necessary for file_column to work
       when your rails app is deployed into a sub-directory via a symbolic link
+    * url_for_*_column will no longer return absolute URLs! Instead, although the
+      generated URL starts with a slash, it will be relative to your application's
+      root URL. This is so, because rails' image_tag helper will automatically
+      convert it to an absolute URL. If you need an absolute URL (e.g., to pass
+      it to link_to) use url_for_file_column's :absolute => true option.
 
 0.3.1
     * make object with file_columns serializable

@@ -52,3 +52,46 @@ class UrlForFileColumnTest < Test::Unit::TestCase
   end
 end
 
+class UrlForFileColumnTest < Test::Unit::TestCase
+  include FileColumnHelper
+  include ActionView::Helpers::AssetTagHelper
+  include ActionView::Helpers::TagHelper
+  include ActionView::Helpers::UrlHelper
+
+  def setup
+    Entry.file_column :image
+
+    # mock up some request data structures for AssetTagHelper
+    @request = RequestMock.new
+    @request.relative_url_root = "/foo/bar"
+    @controller = self
+  end
+
+  def request
+    @request
+  end
+
+  IMAGE_URL = %r{^/foo/bar/entry/image/.+/skanthak.png$}
+  def test_with_image_tag
+    e = Entry.new(:image => upload("skanthak.png"))
+    html = image_tag url_for_file_column(e, "image")
+    url = html.scan(/src=\"(.+)\"/).first.first
+
+    assert_match IMAGE_URL, url
+  end
+
+  def test_with_link_to_tag
+    e = Entry.new(:image => upload("skanthak.png"))
+    html = link_to "Download", url_for_file_column(e, "image", :absolute => true)
+    url = html.scan(/href=\"(.+)\"/).first.first
+    
+    assert_match IMAGE_URL, url
+  end
+
+  def test_relative_url_root_not_modified
+    e = Entry.new(:image => upload("skanthak.png"))
+    url_for_file_column(e, "image", :absolute => true)
+    
+    assert_equal "/foo/bar", @request.relative_url_root
+  end
+end

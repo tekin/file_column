@@ -26,8 +26,10 @@ end
 
 
 class RequestMock
-  def relative_url_root
-    ""
+  attr_accessor :relative_url_root
+
+  def initialize
+    @relative_url_root = ""
   end
 end
 
