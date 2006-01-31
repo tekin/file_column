@@ -32,8 +32,17 @@ class RequestMock
 end
 
 class Test::Unit::TestCase
+  def assert_equal_paths(expected_path, path)
+    assert_equal normalize_path(expected_path), normalize_path(path)
+  end
+
+
   private
   
+  def normalize_path(path)
+    Pathname.new(path).realpath
+  end
+
   def uploaded_file(path, content_type, filename, type=:tempfile)
     if type == :tempfile
       t = Tempfile.new(File.basename(filename))

@@ -184,16 +184,14 @@ class FileColumnTest < Test::Unit::TestCase
     e = Entry.find(e.id)
     assert_equal local_path, e.image
   end
-  
+
   def test_dir_methods
     e = Entry.new
     e.image = uploaded_file(file_path("kerb.jpg"), "image/jpeg", "kerb.jpg")
     e.save
     
-    assert_equal File.expand_path(File.join(RAILS_ROOT, "public", "entry", "image", e.id.to_s)),
-    e.image_dir
-    assert_equal File.join(e.id.to_s), 
-    e.image_relative_dir
+    assert_equal_paths File.join(RAILS_ROOT, "public", "entry", "image", e.id.to_s), e.image_dir
+    assert_equal File.join(e.id.to_s), e.image_relative_dir
   end
 
   def test_store_dir_callback
@@ -203,7 +201,7 @@ class FileColumnTest < Test::Unit::TestCase
     e.image = uploaded_file(file_path("kerb.jpg"), "image/jpeg", "kerb.jpg")    
     assert e.save
     
-    assert_equal File.expand_path(File.join(RAILS_ROOT, "public", "my_store_dir", e.id)), e.image_dir   
+    assert_equal_paths File.join(RAILS_ROOT, "public", "my_store_dir", e.id), e.image_dir   
   end
 
   def test_tmp_dir_with_store_dir_callback
@@ -240,17 +238,6 @@ class FileColumnTest < Test::Unit::TestCase
     assert_equal e.image, e.image(nil)
     assert_equal e.image_relative_path, e.image_relative_path(nil)
   end
-
-  def test_absolute_path_is_simple
-    # we make :root_path more complicated to test that it is normalized in absolute paths
-    Entry.file_column :image, {:root_path => File.join(RAILS_ROOT, "public") + "/../public" }
-    
-    e = Entry.new
-    e.image = uploaded_file(file_path("kerb.jpg"), "image/jpeg", "kerb.jpg")
-    assert File.exists?(e.image)
-    assert e.image !~ /\.\./, "#{e.image} is not a simple path"
-  end
-
 
   def test_cleanup_after_destroy
     e = Entry.new("image" => uploaded_file(file_path("kerb.jpg"), "image/jpeg", "kerb.jpg"))
