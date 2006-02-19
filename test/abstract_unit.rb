@@ -7,12 +7,14 @@ require File.dirname(__FILE__) + '/connection'
 require 'stringio'
 
 RAILS_ROOT = File.dirname(__FILE__)
+RAILS_ENV = ""
 
 $: << "../lib"
 
 require 'file_column'
 require 'file_compat'
 require 'validations'
+require 'test_case'
 
 # do not use the file executable normally in our tests as
 # it may not be present on the machine we are running on
@@ -34,6 +36,7 @@ class RequestMock
 end
 
 class Test::Unit::TestCase
+
   def assert_equal_paths(expected_path, path)
     assert_equal normalize_path(expected_path), normalize_path(path)
   end
@@ -45,37 +48,6 @@ class Test::Unit::TestCase
     Pathname.new(path).realpath
   end
 
-  def uploaded_file(path, content_type, filename, type=:tempfile)
-    if type == :tempfile
-      t = Tempfile.new(File.basename(filename))
-      FileUtils.copy_file(path, t.path)
-    else
-      if path
-        t = StringIO.new(IO.read(path))
-      else
-        t = StringIO.new
-      end
-    end
-    (class << t; self; end).class_eval do
-      alias local_path path if type == :tempfile
-      define_method(:local_path) { "" } if type == :stringio
-      define_method(:original_filename) {filename}
-      define_method(:content_type) {content_type}
-    end
-    return t
-  end
-
-  def upload(basename, content_type=:guess, file_type=:tempfile)
-    if content_type == :guess
-      case basename
-        when /\.jpg$/ then content_type = "image/jpeg"
-        when /\.png$/ then content_type = "image/png"
-        else content_type = nil
-      end
-    end
-    uploaded_file(file_path(basename), content_type, basename, file_type)
-  end
-  
   def clear_validations
     [:validate, :validate_on_create, :validate_on_update].each do |attr|
         Entry.write_inheritable_attribute attr, []
@@ -87,4 +59,5 @@ class Test::Unit::TestCase
     File.expand_path("#{File.dirname(__FILE__)}/fixtures/#{filename}")
   end
 
+  alias_method :f, :file_path
 end

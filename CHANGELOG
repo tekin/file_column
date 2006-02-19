@@ -20,6 +20,7 @@
       root URL. This is so, because rails' image_tag helper will automatically
       convert it to an absolute URL. If you need an absolute URL (e.g., to pass
       it to link_to) use url_for_file_column's :absolute => true option.
+    * added support for file_column enabled models [Manuel Holtgrewe]
 
 0.3.1
     * make object with file_columns serializable

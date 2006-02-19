@@ -602,7 +602,7 @@ module FileColumn # :nodoc:
       # path to the unix "file" executbale for
       # guessing the content-type of files
       :file_exec => "file" 
-    }.freeze
+    }
     
     # handle the +attr+ attribute as a "file-upload" column, generating additional methods as explained
     # above. You should pass the attribute's name as a symbol, like this:

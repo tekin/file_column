@@ -207,7 +207,7 @@ class FileColumnTest < Test::Unit::TestCase
   def test_tmp_dir_with_store_dir_callback
     Entry.file_column :image, {:store_dir => :my_store_dir}
     e = Entry.new
-    e.image = upload("kerb.jpg")
+    e.image = upload(f("kerb.jpg"))
     
     assert_equal File.expand_path(File.join(RAILS_ROOT, "public", "my_store_dir", "tmp")), File.expand_path(File.join(e.image_dir,".."))
   end
@@ -367,7 +367,7 @@ class FileColumnTest < Test::Unit::TestCase
   end
 
   def test_delete_image_on_non_null_column
-    e = Entry.new("file" => upload("skanthak.png"))
+    e = Entry.new("file" => upload(f("skanthak.png")))
     assert e.save
 
     local_path = e.file
@@ -477,12 +477,12 @@ class FileColumnTest < Test::Unit::TestCase
   def test_should_call_after_upload_on_new_upload
     Entry.file_column :image, :after_upload => [:after_assign]
     e = Entry.new
-    e.image = upload("skanthak.png")
+    e.image = upload(f("skanthak.png"))
     assert e.after_assign_called?
   end
 
   def test_should_call_user_after_save_on_save
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
     assert e.save
     
     assert_kind_of FileColumn::PermanentUploadedFile, e.send(:image_state)
@@ -504,24 +504,24 @@ class FileColumnTest < Test::Unit::TestCase
   def test_validates_filesize
     Entry.validates_filesize_of :image, :in => 50.kilobytes..100.kilobytes
 
-    e = Entry.new(:image => upload("kerb.jpg"))
+    e = Entry.new(:image => upload(f("kerb.jpg")))
     assert e.save
 
-    e.image = upload("skanthak.png")
+    e.image = upload(f("skanthak.png"))
     assert !e.save
     assert e.errors.invalid?("image")
   end
 
   def test_validates_file_format_simple
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
     assert e.save
     
     Entry.validates_file_format_of :image, :in => ["jpg"]
 
-    e.image = upload("kerb.jpg")
+    e.image = upload(f("kerb.jpg"))
     assert e.save
 
-    e.image = upload("mysql.sql")
+    e.image = upload(f("mysql.sql"))
     assert !e.save
     assert e.errors.invalid?("image")
     
@@ -530,10 +530,10 @@ class FileColumnTest < Test::Unit::TestCase
   def test_validates_image_size
     Entry.validates_image_size :image, :min => "640x480"
     
-    e = Entry.new(:image => upload("kerb.jpg"))
+    e = Entry.new(:image => upload(f("kerb.jpg")))
     assert e.save
 
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
     assert !e.save
     assert e.errors.invalid?("image")
   end
@@ -548,16 +548,16 @@ class FileColumnTest < Test::Unit::TestCase
   end
 
   def test_permissions_with_small_file
-    do_permission_test upload("skanthak.png", :guess, :stringio)
+    do_permission_test upload(f("skanthak.png"), :guess, :stringio)
   end
 
   def test_permission_with_big_file
-    do_permission_test upload("kerb.jpg")
+    do_permission_test upload(f("kerb.jpg"))
   end
 
   def test_permission_that_overrides_umask
-    do_permission_test upload("skanthak.png", :guess, :stringio), 0666
-    do_permission_test upload("kerb.jpg"), 0666
+    do_permission_test upload(f("skanthak.png"), :guess, :stringio), 0666
+    do_permission_test upload(f("kerb.jpg")), 0666
   end
 end
 
@@ -587,7 +587,7 @@ class FileColumnMoveTest < Test::Unit::TestCase
   end
 
   def test_should_move_direcotries_on_save
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
     
     FileUtils.mkdir( e.image_dir+"/foo" )
     FileUtils.cp file_path("kerb.jpg"), e.image_dir+"/foo/kerb.jpg"
@@ -599,25 +599,25 @@ class FileColumnMoveTest < Test::Unit::TestCase
   end
 
   def test_should_overwrite_dirs_with_files_on_reupload
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
 
     FileUtils.mkdir( e.image_dir+"/kerb.jpg")
     FileUtils.cp file_path("kerb.jpg"), e.image_dir+"/kerb.jpg/"
     assert e.save
 
-    e.image = upload("kerb.jpg")
+    e.image = upload(f("kerb.jpg"))
     assert e.save
 
     assert File.file?(e.image_dir+"/kerb.jpg")
   end
 
   def test_should_overwrite_files_with_dirs_on_reupload
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
 
     assert e.save
     assert File.file?(e.image_dir+"/skanthak.png")
 
-    e.image = upload("kerb.jpg")
+    e.image = upload(f("kerb.jpg"))
     FileUtils.mkdir(e.image_dir+"/skanthak.png")
     
     assert e.save

@@ -32,7 +32,7 @@ class RMagickSimpleTest < AbstractRMagickTest
 
   def test_simple_resize_without_save
     e = Entry.new
-    e.image = upload("kerb.jpg")
+    e.image = upload(f("kerb.jpg"))
     
     img = read_image(e.image)
     assert_max_image_size img, 100
@@ -40,7 +40,7 @@ class RMagickSimpleTest < AbstractRMagickTest
 
   def test_simple_resize_with_save
     e = Entry.new
-    e.image = upload("kerb.jpg")
+    e.image = upload(f("kerb.jpg"))
     assert e.save
     e.reload
     
@@ -52,12 +52,12 @@ class RMagickSimpleTest < AbstractRMagickTest
     Entry.file_column :image, :magick => { :geometry => "100x100" }
     
     e = Entry.new
-    e.image = upload("skanthak.png")
+    e.image = upload(f("skanthak.png"))
     assert e.save
     e.reload
     old_path = e.image
     
-    e.image = upload("kerb.jpg")
+    e.image = upload(f("kerb.jpg"))
     assert e.save
     assert "kerb.jpg", File.basename(e.image)
     assert !File.exists?(old_path), "old image '#{old_path}' still exists"
@@ -68,13 +68,13 @@ class RMagickSimpleTest < AbstractRMagickTest
 
   def test_invalid_image
     e = Entry.new
-    assert_nothing_raised { e.image = upload("invalid-image.jpg") }
+    assert_nothing_raised { e.image = upload(f("invalid-image.jpg")) }
     assert !e.valid?
   end
 
   def test_serializable
     e = Entry.new
-    e.image = upload("skanthak.png")
+    e.image = upload(f("skanthak.png"))
     assert_nothing_raised {
       flash = Marshal.dump(e)
       e = Marshal.load(flash)
@@ -104,7 +104,7 @@ class RMagickVersionsTest < AbstractRMagickTest
 
 
   def test_should_create_thumb
-    e = Entry.new("image" => upload("skanthak.png"))
+    e = Entry.new("image" => upload(f("skanthak.png")))
     
     assert File.exists?(e.image("thumb")), "thumb-nail not created"
     
@@ -112,19 +112,19 @@ class RMagickVersionsTest < AbstractRMagickTest
   end
 
   def test_version_name_can_be_different_from_key
-    e = Entry.new("image" => upload("skanthak.png"))
+    e = Entry.new("image" => upload(f("skanthak.png")))
     
     assert File.exists?(e.image("100_100"))
     assert !File.exists?(e.image("medium"))
   end
 
   def test_should_not_create_lazy_versions
-    e = Entry.new("image" => upload("skanthak.png"))
+    e = Entry.new("image" => upload(f("skanthak.png")))
     assert !File.exists?(e.image("large")), "lazy versions should not be created unless needed"
   end
 
   def test_should_create_lazy_version_on_demand
-    e = Entry.new("image" => upload("skanthak.png"))
+    e = Entry.new("image" => upload(f("skanthak.png")))
     
     e.send(:image_state).create_magick_version_if_needed(:large)
     
@@ -134,7 +134,7 @@ class RMagickVersionsTest < AbstractRMagickTest
   end
 
   def test_generated_name_should_not_change
-    e = Entry.new("image" => upload("skanthak.png"))
+    e = Entry.new("image" => upload(f("skanthak.png")))
     
     name1 = e.send(:image_state).create_magick_version_if_needed("50x50")
     name2 = e.send(:image_state).create_magick_version_if_needed("50x50")
@@ -144,7 +144,7 @@ class RMagickVersionsTest < AbstractRMagickTest
   end
 
   def test_should_create_version_with_string
-    e = Entry.new("image" => upload("skanthak.png"))
+    e = Entry.new("image" => upload(f("skanthak.png")))
     
     name = e.send(:image_state).create_magick_version_if_needed("32x32")
     
@@ -154,7 +154,7 @@ class RMagickVersionsTest < AbstractRMagickTest
   end
 
   def test_should_create_safe_auto_id
-    e = Entry.new("image" => upload("skanthak.png"))
+    e = Entry.new("image" => upload(f("skanthak.png")))
 
     name = e.send(:image_state).create_magick_version_if_needed("32x32")
 
@@ -172,7 +172,7 @@ class RMagickCroppingTest < AbstractRMagickTest
   end
   
   def test_should_crop_image_on_upload
-    e = Entry.new("image" => upload("skanthak.png"))
+    e = Entry.new("image" => upload(f("skanthak.png")))
     
     img = read_image(e.image("thumb"))
     
@@ -193,14 +193,14 @@ class UrlForImageColumnTest < AbstractRMagickTest
   end
     
   def test_should_use_version_on_symbol_option
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
     
     url = url_for_image_column(e, "image", :thumb)
     assert_match %r{^/entry/image/tmp/.+/thumb/skanthak.png$}, url
   end
 
   def test_should_use_string_as_size
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
 
     url = url_for_image_column(e, "image", "50x50")
     
@@ -213,7 +213,7 @@ class UrlForImageColumnTest < AbstractRMagickTest
   end
 
   def test_should_accept_version_hash
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
 
     url = url_for_image_column(e, "image", :size => "50x50", :crop => "1:1", :name => "small")
 
@@ -240,7 +240,7 @@ class RMagickPermissionsTest < AbstractRMagickTest
   end
 
   def test_permissions_with_rmagick
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
     
     check_permissions e
 

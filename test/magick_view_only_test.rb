@@ -14,7 +14,7 @@ class RMagickViewOnlyTest < Test::Unit::TestCase
   end
 
   def test_url_for_image_column_without_model_versions
-    e = Entry.new(:image => upload("skanthak.png"))
+    e = Entry.new(:image => upload(f("skanthak.png")))
     
     assert_nothing_raised { url_for_image_column e, "image", "50x50" }
   end
