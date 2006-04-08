@@ -2,7 +2,7 @@ module FileColumn # :nodoc:
   
   class BaseUploadedFile # :nodoc:
     def transform_with_magick
-      if needs_resize?
+      if needs_transform?
         begin
           img = ::Magick::Image::read(absolute_path).first
         rescue ::Magick::ImageMagickError
@@ -16,11 +16,11 @@ module FileColumn # :nodoc:
             next if version_options[:lazy]
             dirname = version_options[:name]
             FileUtils.mkdir File.join(@dir, dirname)
-            resize_image(img, version_options, absolute_path(dirname))
+            transform_image(img, version_options, absolute_path(dirname))
           end
         end
-        if options[:magick][:size] or options[:magick][:crop]
-          resize_image(img, options[:magick], absolute_path)
+        if options[:magick][:size] or options[:magick][:crop] or options[:magick][:transformation]
+          transform_image(img, options[:magick], absolute_path)
         end
 
         GC.start
@@ -48,7 +48,7 @@ module FileColumn # :nodoc:
         img = ::Magick::Image::read(absolute_path).first
         dirname = version_options[:name]
         FileUtils.mkdir File.join(@dir, dirname)
-        resize_image(img, version_options, absolute_path(dirname))
+        transform_image(img, version_options, absolute_path(dirname))
       end
 
       version_options[:name]
@@ -62,13 +62,20 @@ module FileColumn # :nodoc:
 
     private
     
-    def needs_resize?
+    def needs_transform?
       options[:magick] and just_uploaded? and 
-        (options[:magick][:size] or options[:magick][:versions])
+        (options[:magick][:size] or options[:magick][:versions] or options[:magick][:transformation])
     end
-    
-    def resize_image(img, img_options, dest_path)
+
+    def transform_image(img, img_options, dest_path)
       begin
+        if img_options[:transformation]
+          if img_options[:transformation].is_a?(Symbol)
+            img = @instance.send(img_options[:transformation], img)
+          else
+            img = img_options[:transformation].call(img)
+          end
+        end
         if img_options[:crop]
           dx, dy = img_options[:crop].split(':').map { |x| x.to_f }
           w, h = (img.rows * dx / dy), (img.columns * dy / dx)
@@ -99,10 +106,14 @@ module FileColumn # :nodoc:
   # after a new file is assigned to the file_column attribute (i.e.,
   # when a new file has been uploaded).
   #
+  # == Resizing images
+  #
   # To resize the uploaded image according to an imagemagick geometry
   # string, just use the <tt>:size</tt> option:
   #
   #    file_column :image, :magick => {:size => "800x600>"}
+  #
+  # == Multiple versions
   #
   # You can also create additional versions of your image, for example
   # thumb-nails, like this:
@@ -110,15 +121,6 @@ module FileColumn # :nodoc:
   #         :thumb => {:size => "50x50"},
   #         :medium => {:size => "640x480>"}
   #       }
-  #
-  # If you wish to crop your images with a size ratio before scaling
-  # them according to your version geometry, you can use the :crop directive.
-  #    file_column :image, :magick => {:versions => {
-  #         :square => {:crop => "1:1", :size => "50x50", :name => "thumb"},
-  #         :screen => {:crop => "4:3", :size => "640x480>"},
-  #         :widescreen => {:crop => "16:9", :size => "640x360!"},
-  #       }
-  #    }
   #
   # These versions will be stored in separate sub-directories, named like the
   # symbol you used to identify the version. So in the previous example, the
@@ -130,6 +132,41 @@ module FileColumn # :nodoc:
   # method like this:
   #
   #    <%= url_for_image_column "entry", "image", :thumb %>
+  #
+  # == Cropping images
+  #
+  # If you wish to crop your images with a size ratio before scaling
+  # them according to your version geometry, you can use the :crop directive.
+  #    file_column :image, :magick => {:versions => {
+  #         :square => {:crop => "1:1", :size => "50x50", :name => "thumb"},
+  #         :screen => {:crop => "4:3", :size => "640x480>"},
+  #         :widescreen => {:crop => "16:9", :size => "640x360!"},
+  #       }
+  #    }
+  #
+  # == Custom transformations
+  #
+  # To perform custom transformations on uploaded images, you can pass a
+  # callback to file_column:
+  #    file_column :image, :magick => 
+  #       Proc.new { |image| image.quantize(256, Magick::GRAYColorspace) }
+  #
+  # The callback you give, receives one argument, which is an instance
+  # of Magick::Image, the RMagick image class. It should return a transformed
+  # image. Instead of passing a <tt>Proc</tt> object, you can also give a
+  # <tt>Symbol</tt>, the name of an instance method of your model.
+  #
+  # Custom transformations can be combined via the standard :size and :crop
+  # features, by using the :transformation option:
+  #   file_column :image, :magick => {
+  #      :transformation => Proc.new { |image| ... },
+  #      :size => "640x480"
+  #    }
+  #
+  # In this case, the standard resizing operations will be performed after the
+  # custom transformation.
+  #
+  # Of course, custom transformations can be used in versions, as well.
   #
   # <b>Note:</b> You'll need the
   # RMagick extension being installed  in order to use file_column's
@@ -166,7 +203,10 @@ module FileColumn # :nodoc:
 
     
     def self.process_options(options,create_name=true)
-      options = {:size => options } if options.kind_of?(String)
+      case options
+      when String then options = {:size => options}
+      when Proc, Symbol then options = {:transformation => options }
+      end
       if options[:geometry]
         options[:size] = options.delete(:geometry)
       end

@@ -249,3 +249,63 @@ class RMagickPermissionsTest < AbstractRMagickTest
     check_permissions e
   end
 end
+
+class Entry 
+  def transform_grey(img)
+    img.quantize(256, Magick::GRAYColorspace)
+  end
+end
+
+class RMagickTransformationTest < AbstractRMagickTest
+  def assert_transformed(image)
+    assert File.exists?(image), "the image does not exist"
+    assert 256 > read_image(image).number_colors, "the number of colors was not changed"
+  end
+  
+  def test_simple_transformation
+    Entry.file_column :image, :magick => { :transformation => Proc.new { |image| image.quantize(256, Magick::GRAYColorspace) } }
+    e = Entry.new("image" => upload(f("skanthak.png")))
+    assert_transformed(e.image)
+  end
+  
+  def test_simple_version_transformation
+    Entry.file_column :image, :magick => {
+      :versions => { :thumb => Proc.new { |image| image.quantize(256, Magick::GRAYColorspace) } }
+    }
+    e = Entry.new("image" => upload(f("skanthak.png")))
+    assert_transformed(e.image("thumb"))
+  end
+  
+  def test_complex_version_transformation
+    Entry.file_column :image, :magick => {
+      :versions => {
+        :thumb => { :transformation => Proc.new { |image| image.quantize(256, Magick::GRAYColorspace) } }
+      }
+    }
+    e = Entry.new("image" => upload(f("skanthak.png")))
+    assert_transformed(e.image("thumb"))
+  end
+  
+  def test_lazy_transformation
+    Entry.file_column :image, :magick => {
+      :versions => {
+        :thumb => { :transformation => Proc.new { |image| image.quantize(256, Magick::GRAYColorspace) }, :lazy => true }
+      }
+    }
+    e = Entry.new("image" => upload(f("skanthak.png")))
+    e.send(:image_state).create_magick_version_if_needed(:thumb)
+    assert_transformed(e.image("thumb"))
+  end
+
+  def test_simple_callback_transformation
+    Entry.file_column :image, :magick => :transform_grey
+    e = Entry.new(:image => upload(f("skanthak.png")))
+    assert_transformed(e.image)
+  end
+
+  def test_complex_callback_transformation
+    Entry.file_column :image, :magick => { :transformation => :transform_grey }
+    e = Entry.new(:image => upload(f("skanthak.png")))
+    assert_transformed(e.image)
+  end
+end
