@@ -559,6 +559,26 @@ class FileColumnTest < Test::Unit::TestCase
     do_permission_test upload(f("skanthak.png"), :guess, :stringio), 0666
     do_permission_test upload(f("kerb.jpg")), 0666
   end
+
+  def test_access_with_empty_id
+    # an empty id might happen after a clone or through some other
+    # strange event. Since we would create a path that contains nothing
+    # where the id would have been, we should fail fast with an exception
+    # in this case
+    
+    e = Entry.new(:image => upload(f("skanthak.png")))
+    assert e.save
+    id = e.id
+
+    e = Entry.find(id)
+    
+    e["id"] = ""
+    assert_raise(RuntimeError) { e.image }
+    
+    e = Entry.find(id)
+    e["id"] = nil
+    assert_raise(RuntimeError) { e.image }
+  end
 end
 
 # Tests for moving temp dir to permanent dir
