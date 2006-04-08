@@ -239,7 +239,7 @@ module FileColumn # :nodoc:
         end
 
         new_local_file_path = File.join(tmp_base_dir,@tmp_dir,@filename)
-        FileUtils.mv(local_file_path, new_local_file_path) unless new_local_file_path == local_file_path
+        File.rename(local_file_path, new_local_file_path) unless new_local_file_path == local_file_path
         local_file_path = new_local_file_path
       end
       
