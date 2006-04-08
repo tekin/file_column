@@ -73,7 +73,7 @@ module FileColumn # :nodoc:
           dx, dy = img_options[:crop].split(':').map { |x| x.to_f }
           w, h = (img.rows * dx / dy), (img.columns * dy / dx)
           img = img.crop(::Magick::CenterGravity, [img.columns, w].min, 
-                         [img.rows, h].min)
+                         [img.rows, h].min, true)
         end
 
         if img_options[:size]
