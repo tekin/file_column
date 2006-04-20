@@ -91,6 +91,40 @@ class RMagickSimpleTest < AbstractRMagickTest
   end
 end
 
+class RMagickCustomAttributesTest < AbstractRMagickTest
+  def assert_image_property(img, property, value, text = nil)
+    assert File.exists?(img), "the image does not exist"
+    assert_equal value, read_image(img).send(property), text
+  end
+
+  def test_simple_attributes
+    Entry.file_column :image, :magick => { :attributes => { :quality => 20 } }
+    e = Entry.new("image" => upload(f("kerb.jpg")))
+    assert_image_property e.image, :quality, 20, "the quality was not set"
+  end
+
+  def test_version_attributes
+    Entry.file_column :image, :magick => {
+      :versions => {
+        :thumb => { :attributes => { :quality => 20 } }
+      }
+    }
+    e = Entry.new("image" => upload(f("kerb.jpg")))
+    assert_image_property e.image("thumb"), :quality, 20, "the quality was not set"
+  end
+  
+  def test_lazy_attributes
+    Entry.file_column :image, :magick => {
+      :versions => {
+        :thumb => { :attributes => { :quality => 20 }, :lazy => true }
+      }
+    }
+    e = Entry.new("image" => upload(f("kerb.jpg")))
+    e.send(:image_state).create_magick_version_if_needed(:thumb)
+    assert_image_property e.image("thumb"), :quality, 20, "the quality was not set"
+  end
+end
+
 class RMagickVersionsTest < AbstractRMagickTest
   def setup
     Entry.file_column :image, :magick => {:geometry => "200x200",

@@ -19,7 +19,7 @@ module FileColumn # :nodoc:
             transform_image(img, version_options, absolute_path(dirname))
           end
         end
-        if options[:magick][:size] or options[:magick][:crop] or options[:magick][:transformation]
+        if options[:magick][:size] or options[:magick][:crop] or options[:magick][:transformation] or options[:magick][:attributes]
           transform_image(img, options[:magick], absolute_path)
         end
 
@@ -64,7 +64,7 @@ module FileColumn # :nodoc:
     
     def needs_transform?
       options[:magick] and just_uploaded? and 
-        (options[:magick][:size] or options[:magick][:versions] or options[:magick][:transformation])
+        (options[:magick][:size] or options[:magick][:versions] or options[:magick][:transformation] or options[:magick][:attributes])
     end
 
     def transform_image(img, img_options, dest_path)
@@ -89,7 +89,13 @@ module FileColumn # :nodoc:
           end
         end
       ensure
-        img.write dest_path
+        img.write(dest_path) do
+          if img_options[:attributes]
+            img_options[:attributes].each_pair do |property, value| 
+              self.send "#{property}=", value
+            end
+          end
+        end
         File.chmod options[:permissions], dest_path
       end
     end
@@ -144,6 +150,14 @@ module FileColumn # :nodoc:
   #       }
   #    }
   #
+  # == Custom attributes
+  #
+  # To change some of the image properties like compression level before they
+  # are saved you can set the <tt>:attributes</tt> option.
+  # For a list of available attributes go to http://www.simplesystems.org/RMagick/doc/info.html
+  # 
+  #     file_column :image, :magick => { :attributes => { :quality => 30 } }
+  # 
   # == Custom transformations
   #
   # To perform custom transformations on uploaded images, you can pass a
