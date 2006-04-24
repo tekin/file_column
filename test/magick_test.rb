@@ -91,6 +91,41 @@ class RMagickSimpleTest < AbstractRMagickTest
   end
 end
 
+class RMagickRequiresImageTest < AbstractRMagickTest
+  def setup
+    Entry.file_column :image, :magick => { 
+      :size => "100x100>",
+      :image_required => false,
+      :versions => {
+        :thumb => "80x80>",
+        :large => {:size => "200x200>", :lazy => true}
+      }
+    }
+  end
+
+  def test_image_required_with_image
+    e = Entry.new(:image => upload(f("skanthak.png")))
+    assert_max_image_size read_image(e.image), 100
+    assert e.valid?
+  end
+
+  def test_image_required_with_invalid_image
+    e = Entry.new(:image => upload(f("invalid-image.jpg")))
+    assert e.valid?, "did not ignore invalid image"
+    assert FileUtils.identical?(e.image, f("invalid-image.jpg")), "uploaded file has not been left alone"
+  end
+
+  def test_versions_with_invalid_image
+    e = Entry.new(:image => upload(f("invalid-image.jpg")))
+    assert e.valid?
+
+    image_state = e.send(:image_state)
+    assert_nil image_state.create_magick_version_if_needed(:thumb)
+    assert_nil image_state.create_magick_version_if_needed(:large)
+    assert_nil image_state.create_magick_version_if_needed("300x300>")
+  end
+end
+
 class RMagickCustomAttributesTest < AbstractRMagickTest
   def assert_image_property(img, property, value, text = nil)
     assert File.exists?(img), "the image does not exist"

@@ -6,8 +6,10 @@ module FileColumn # :nodoc:
         begin
           img = ::Magick::Image::read(absolute_path).first
         rescue ::Magick::ImageMagickError
-          @magick_errors ||= []
-          @magick_errors << "invalid image"
+          if options[:magick][:image_required]
+            @magick_errors ||= []
+            @magick_errors << "invalid image"
+          end
           return
         end
         
@@ -45,7 +47,13 @@ module FileColumn # :nodoc:
       end
 
       unless File.exists?(absolute_path(version_options[:name]))
-        img = ::Magick::Image::read(absolute_path).first
+        begin
+          img = ::Magick::Image::read(absolute_path).first
+        rescue ::Magick::ImageMagickError
+          # we might be called directly from the view here
+          # so we just return nil if we cannot load the image
+          return nil
+        end
         dirname = version_options[:name]
         FileUtils.mkdir File.join(@dir, dirname)
         transform_image(img, version_options, absolute_path(dirname))
@@ -118,6 +126,15 @@ module FileColumn # :nodoc:
   # string, just use the <tt>:size</tt> option:
   #
   #    file_column :image, :magick => {:size => "800x600>"}
+  #
+  # If the uploaded file cannot be loaded by RMagick, file_column will
+  # signal a validation error for the corresponding attribute. If you
+  # want to allow non-image files to be uploaded in a column that uses
+  # the <tt>:magick</tt> option, you can set the <tt>:image_required</tt>
+  # attribute to +false+:
+  #
+  #    file_column :image, :magick => {:size => "800x600>",
+  #                                    :image_required => false }
   #
   # == Multiple versions
   #
@@ -224,6 +241,7 @@ module FileColumn # :nodoc:
       if options[:geometry]
         options[:size] = options.delete(:geometry)
       end
+      options[:image_required] = true unless options.key?(:image_required)
       if options[:name].nil? and create_name
         if create_name == true
           hash = 0

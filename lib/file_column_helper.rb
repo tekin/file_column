@@ -130,7 +130,8 @@ module FileColumnHelper
   # although it will start with a slash.
   # If you pass this URL to rails' +image_tag+ helper, it will be converted to an
   # absolute URL automatically.
-  # If there is currently no image uploaded, this method will return +nil+.
+  # If there is currently no image uploaded, or there is a problem while loading
+  # the image this method will return +nil+.
   def url_for_image_column(object, method, options=nil)
     case object
     when String, Symbol
@@ -140,6 +141,10 @@ module FileColumnHelper
     if options
       subdir = object.send("#{method}_state").create_magick_version_if_needed(options)
     end
-    url_for_file_column(object, method, subdir)
+    if subdir.nil?
+      nil
+    else
+      url_for_file_column(object, method, subdir)
+    end
   end
 end

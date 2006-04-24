@@ -23,6 +23,8 @@
     * added support for file_column enabled unit tests [Manuel Holtgrewe]
     * support for custom transformation of images [Frederik Fix]
     * allow setting of image attributes (e.g., quality) [Frederik Fix]
+    * :magick columns can optionally ignore non-images (i.e., do not try to
+       resize them)
 
 0.3.1
     * make object with file_columns serializable
