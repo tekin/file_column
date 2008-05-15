@@ -96,6 +96,11 @@ module FileColumn # :nodoc:
             i.resize(c, r)
           end
         end
+
+				if img_options[:letterbox]
+					w, h = img_options[:letterbox].split('x').map { |x| x.to_f }
+					img = img.crop((img.columns/2 - w/2), (img.rows/2 - h/2), w, h)
+				end
       ensure
         img.write(dest_path) do
           if img_options[:attributes]
