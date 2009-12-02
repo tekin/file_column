@@ -76,7 +76,7 @@ module FileColumnHelper
     return nil unless relative_path
 
     url = ""
-    url << request.relative_url_root.to_s if absolute
+    url << ActionController::Base.relative_url_root.to_s if absolute
     url << "/"
     url << object.send("#{method}_options")[:base_url] << "/"
     url << relative_path
